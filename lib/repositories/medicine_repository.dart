@@ -108,8 +108,11 @@ class MedicineRepository {
       }
 
       // Stock: becoming 'taken' consumes 1; reversing a 'taken' restores 1.
-      // ponytail: clamp at 0 — at stock 0 a reversal could over-credit by 1,
-      // but the dashboard hides 0-stock medicines so that path isn't reachable via UI.
+      // ponytail: clamp at 0 — a reversal at stock 0 could over-credit by 1, but
+      // it's unreachable because DashboardProvider.markDose calls refresh() after
+      // every mark: the dose that drove stock to 0 is dropped from the dashboard
+      // on that refresh, so there's no on-screen Taken dose at stock 0 to reverse.
+      // If that post-mark refresh is ever removed, this becomes reachable.
       final adjustment = (oldStatus == DoseStatus.taken ? 1 : 0) -
           (status == DoseStatus.taken ? 1 : 0);
       if (adjustment != 0) {

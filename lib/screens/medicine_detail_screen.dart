@@ -51,10 +51,14 @@ class _MedicineDetailScreenState extends State<MedicineDetailScreen> {
 
   Future<void> _pickEndDate() async {
     final now = DateTime.now();
+    final firstDate = now.subtract(const Duration(days: 365));
+    // A stored end-date older than firstDate would trip showDatePicker's
+    // initialDate >= firstDate assertion, so clamp the initial value.
+    final initial = (_endDate != null && _endDate!.isAfter(firstDate)) ? _endDate! : now;
     final d = await showDatePicker(
       context: context,
-      initialDate: _endDate ?? now,
-      firstDate: now.subtract(const Duration(days: 365)),
+      initialDate: initial,
+      firstDate: firstDate,
       lastDate: DateTime(now.year + 5),
     );
     if (d != null) setState(() => _endDate = d);
