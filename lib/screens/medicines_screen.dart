@@ -50,10 +50,10 @@ class _MedicinesScreenState extends State<MedicinesScreen> {
           ListTile(
             title: Text(m.name),
             subtitle: Text([
-              // Dosage = doses per day = number of reminder times.
-              'Dosage: ${(p.timesByMedicine[m.id] ?? []).length}',
+              // The reminder times are the doses per day — label them directly
+              // rather than repeating the count as a separate "Dosage" number.
               if ((p.timesByMedicine[m.id] ?? []).isNotEmpty)
-                (p.timesByMedicine[m.id] ?? []).join(', '),
+                'Times: ${(p.timesByMedicine[m.id] ?? []).join(', ')}',
               'Stock: ${m.stockQty}',
               if (m.endDate != null) 'Until ${Medicine.fmtDate(m.endDate!)}',
             ].join('  •  ')),
