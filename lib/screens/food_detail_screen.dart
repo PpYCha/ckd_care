@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:ckd_care/data/food_data.dart';
+import 'package:ckd_care/data/food_disclaimer.dart';
 import 'package:ckd_care/models/food.dart';
+import 'package:ckd_care/theme/app_theme.dart';
 
 class FoodDetailScreen extends StatelessWidget {
   const FoodDetailScreen({super.key, required this.food});
@@ -62,6 +63,26 @@ class FoodDetailScreen extends StatelessWidget {
             section('Avoid',
                 methodList(food.avoidMethods, Icons.cancel, cs.onSurfaceVariant)),
           const SizedBox(height: 24),
+          if (isHighRiskFood(food)) ...[
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: AppColors.warn.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Icon(Icons.priority_high_rounded,
+                    size: 20, color: AppColors.warn),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(kFoodHighRiskNotice,
+                      style: text.bodyMedium?.copyWith(color: AppColors.warn)),
+                ),
+              ]),
+            ),
+          ],
+          const SizedBox(height: 20),
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
@@ -71,9 +92,7 @@ class FoodDetailScreen extends StatelessWidget {
             child: Row(children: [
               Icon(Icons.info_outline, size: 20, color: cs.onSurfaceVariant),
               const SizedBox(width: 10),
-              Expanded(
-                child: Text(kFoodDisclaimer, style: text.bodyMedium),
-              ),
+              Expanded(child: Text(kFoodDetailNotice, style: text.bodyMedium)),
             ]),
           ),
         ],

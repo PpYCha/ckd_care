@@ -19,6 +19,7 @@ import 'package:ckd_care/screens/food_screen.dart';
 import 'package:ckd_care/screens/settings_screen.dart';
 import 'package:ckd_care/services/notification_service.dart';
 import 'package:ckd_care/theme/app_theme.dart';
+import 'package:ckd_care/widgets/food_disclaimer_dialog.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -122,6 +123,7 @@ class HomeShell extends StatefulWidget {
 
 class _HomeShellState extends State<HomeShell> {
   int _index = 0;
+  static const _foodIndex = 3;
   static const _titles = ['Dashboard', 'Fluid', 'Medicines', 'Food', 'Settings'];
   static const _screens = [
     DashboardScreen(),
@@ -138,7 +140,7 @@ class _HomeShellState extends State<HomeShell> {
       body: _screens[_index],
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
-        onDestinationSelected: (i) => setState(() => _index = i),
+        onDestinationSelected: _onSelect,
         destinations: const [
           NavigationDestination(icon: Icon(Icons.dashboard), label: 'Home'),
           NavigationDestination(icon: Icon(Icons.water_drop), label: 'Fluid'),
@@ -148,5 +150,23 @@ class _HomeShellState extends State<HomeShell> {
         ],
       ),
     );
+  }
+
+  Future<void> _onSelect(int i) async {
+    if (i == _foodIndex) {
+      final settings = context.read<SettingsProvider>();
+      if (!await settings.foodDisclaimerAcknowledged()) {
+        if (!mounted) return;
+        final ok = await showDialog<bool>(
+          context: context,
+          barrierDismissible: false,
+          builder: (_) => const FoodDisclaimerDialog(),
+        );
+        if (ok != true) return; // declined: stay on the current tab
+        await settings.acknowledgeFoodDisclaimer();
+        if (!mounted) return;
+      }
+    }
+    setState(() => _index = i);
   }
 }
