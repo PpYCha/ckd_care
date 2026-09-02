@@ -27,4 +27,10 @@ void main() {
     await repo.setNotificationsEnabled(false);
     expect(await repo.getNotificationsEnabled(), isFalse);
   });
+
+  test('food disclaimer ack version round-trips; null until set', () async {
+    expect(await repo.getFoodDisclaimerAckVersion(), isNull);
+    await repo.setFoodDisclaimerAck('1.0');
+    expect(await repo.getFoodDisclaimerAckVersion(), '1.0');
+  });
 }

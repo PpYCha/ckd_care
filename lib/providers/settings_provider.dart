@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:ckd_care/data/food_disclaimer.dart';
 import 'package:ckd_care/repositories/medicine_repository.dart';
 import 'package:ckd_care/repositories/settings_repository.dart';
 import 'package:ckd_care/services/notification_service.dart';
@@ -40,4 +41,10 @@ class SettingsProvider extends ChangeNotifier {
     }
     notifyListeners();
   }
+
+  Future<bool> foodDisclaimerAcknowledged() async =>
+      !foodDisclaimerNeeded(await _repo.getFoodDisclaimerAckVersion());
+
+  Future<void> acknowledgeFoodDisclaimer() =>
+      _repo.setFoodDisclaimerAck(kFoodDisclaimerVersion);
 }

@@ -3,6 +3,8 @@ import 'package:ckd_care/db/app_database.dart';
 
 const String kFluidLimit = 'fluid_limit_ml';
 const String kNotifications = 'notifications_enabled';
+const String kFoodDisclaimerAckVersion = 'food_disclaimer_ack_version';
+const String kFoodDisclaimerAckAt = 'food_disclaimer_ack_at';
 
 class SettingsRepository {
   SettingsRepository(this._db);
@@ -33,4 +35,11 @@ class SettingsRepository {
 
   Future<void> setNotificationsEnabled(bool enabled) =>
       _set(kNotifications, enabled.toString());
+
+  Future<String?> getFoodDisclaimerAckVersion() => _get(kFoodDisclaimerAckVersion);
+
+  Future<void> setFoodDisclaimerAck(String version) async {
+    await _set(kFoodDisclaimerAckVersion, version);
+    await _set(kFoodDisclaimerAckAt, DateTime.now().toIso8601String());
+  }
 }
