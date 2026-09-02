@@ -43,6 +43,18 @@ class MedicineRepository {
     return rows.map(Medicine.fromMap).toList();
   }
 
+  /// Active medicines eligible to show on the dashboard: in stock and not past
+  /// their end-date. [today] is 'YYYY-MM-DD'.
+  Future<List<Medicine>> dashboardMedicines(String today) async {
+    final db = await _db.database;
+    final rows = await db.query('medicine',
+        where:
+            'active = 1 AND deleted = 0 AND stock_qty > 0 AND (end_date IS NULL OR end_date >= ?)',
+        whereArgs: [today],
+        orderBy: 'name COLLATE NOCASE ASC');
+    return rows.map(Medicine.fromMap).toList();
+  }
+
   Future<List<MedicineTime>> timesFor(int medicineId) async {
     final db = await _db.database;
     final rows = await db.query('medicine_time',
@@ -61,33 +73,54 @@ class MedicineRepository {
         whereArgs: [medicineId]);
   }
 
-  Future<void> logDose(int medicineId, DateTime scheduledTime, DoseStatus status) async {
+  Future<void> logDose(
+      int medicineId, DateTime scheduledTime, DoseStatus status) async {
     final db = await _db.database;
     final iso = scheduledTime.toIso8601String();
     final now = DateTime.now().toIso8601String();
-    final existing = await db.query('dose_log',
-        columns: ['id'],
-        where: 'medicine_id = ? AND scheduled_time = ? AND deleted = 0',
-        whereArgs: [medicineId, iso]);
-    if (existing.isEmpty) {
-      final medRows = await db.query('medicine',
-          columns: ['uuid'], where: 'id = ?', whereArgs: [medicineId]);
-      final medicineUuid = medRows.first['uuid'] as String;
-      await db.insert('dose_log', {
-        'uuid': newUuid(),
-        'medicine_id': medicineId,
-        'medicine_uuid': medicineUuid,
-        'scheduled_time': iso,
-        'status': status.name,
-        'acted_at': now,
-        'updated_at': now,
-        'deleted': 0,
-      });
-    } else {
-      await db.update('dose_log',
-          {'status': status.name, 'acted_at': now, 'updated_at': now},
-          where: 'id = ?', whereArgs: [existing.first['id']]);
-    }
+    await db.transaction((txn) async {
+      final existing = await txn.query('dose_log',
+          columns: ['id', 'status'],
+          where: 'medicine_id = ? AND scheduled_time = ? AND deleted = 0',
+          whereArgs: [medicineId, iso]);
+      final DoseStatus? oldStatus = existing.isEmpty
+          ? null
+          : DoseStatus.values.byName(existing.first['status'] as String);
+
+      if (existing.isEmpty) {
+        final medRows = await txn.query('medicine',
+            columns: ['uuid'], where: 'id = ?', whereArgs: [medicineId]);
+        final medicineUuid = medRows.first['uuid'] as String;
+        await txn.insert('dose_log', {
+          'uuid': newUuid(),
+          'medicine_id': medicineId,
+          'medicine_uuid': medicineUuid,
+          'scheduled_time': iso,
+          'status': status.name,
+          'acted_at': now,
+          'updated_at': now,
+          'deleted': 0,
+        });
+      } else {
+        await txn.update('dose_log',
+            {'status': status.name, 'acted_at': now, 'updated_at': now},
+            where: 'id = ?', whereArgs: [existing.first['id']]);
+      }
+
+      // Stock: becoming 'taken' consumes 1; reversing a 'taken' restores 1.
+      // ponytail: clamp at 0 — at stock 0 a reversal could over-credit by 1,
+      // but the dashboard hides 0-stock medicines so that path isn't reachable via UI.
+      final adjustment = (oldStatus == DoseStatus.taken ? 1 : 0) -
+          (status == DoseStatus.taken ? 1 : 0);
+      if (adjustment != 0) {
+        final medRows = await txn.query('medicine',
+            columns: ['stock_qty'], where: 'id = ?', whereArgs: [medicineId]);
+        final current = medRows.first['stock_qty'] as int;
+        final next = (current + adjustment).clamp(0, 1 << 31);
+        await txn.update('medicine', {'stock_qty': next, 'updated_at': now},
+            where: 'id = ?', whereArgs: [medicineId]);
+      }
+    });
   }
 
   Future<List<DoseLog>> dosesForMedicine(int medicineId) async {

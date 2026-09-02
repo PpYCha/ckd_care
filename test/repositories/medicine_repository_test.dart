@@ -57,4 +57,58 @@ void main() {
     expect(await repo.statusFor(id, due), DoseStatus.skipped);
     expect(await repo.statusFor(id, DateTime(2026, 9, 2, 20)), isNull);
   });
+
+  test('marking taken decrements stock; reversing restores it', () async {
+    final id = await repo.saveMedicine(med('Aspirin', stock: 3), ['08:00']);
+    final due = DateTime(2026, 9, 2, 8);
+
+    await repo.logDose(id, due, DoseStatus.taken);
+    expect((await repo.activeMedicines()).single.stockQty, 2);
+
+    // same slot -> skipped: restores the consumed unit
+    await repo.logDose(id, due, DoseStatus.skipped);
+    expect((await repo.activeMedicines()).single.stockQty, 3);
+
+    // skipped -> taken again: consumes again
+    await repo.logDose(id, due, DoseStatus.taken);
+    expect((await repo.activeMedicines()).single.stockQty, 2);
+
+    // stock never goes below zero
+    await repo.logDose(id, DateTime(2026, 9, 2, 12), DoseStatus.taken); // 1
+    await repo.logDose(id, DateTime(2026, 9, 2, 16), DoseStatus.taken); // 0
+    await repo.logDose(id, DateTime(2026, 9, 2, 18), DoseStatus.taken); // clamp 0
+    expect((await repo.activeMedicines()).single.stockQty, 0);
+  });
+
+  test('dashboardMedicines excludes depleted and past-end-date medicines', () async {
+    final ok = await repo.saveMedicine(med('InStock', stock: 5), ['08:00']);
+    final depleted = await repo.saveMedicine(med('Empty', stock: 0), ['08:00']);
+    final ended = await repo.saveMedicine(
+        Medicine(
+            uuid: newUuid(),
+            name: 'Ended',
+            stockQty: 5,
+            endDate: DateTime(2026, 8, 31),
+            createdAt: DateTime(2026, 9, 2),
+            updatedAt: DateTime(2026, 9, 2)),
+        ['08:00']);
+    final futureEnd = await repo.saveMedicine(
+        Medicine(
+            uuid: newUuid(),
+            name: 'FutureEnd',
+            stockQty: 5,
+            endDate: DateTime(2026, 12, 31),
+            createdAt: DateTime(2026, 9, 2),
+            updatedAt: DateTime(2026, 9, 2)),
+        ['08:00']);
+
+    final names = (await repo.dashboardMedicines('2026-09-02')).map((m) => m.name).toSet();
+    expect(names, {'InStock', 'FutureEnd'});
+    expect(names.contains('Empty'), isFalse);      // depleted
+    expect(names.contains('Ended'), isFalse);       // end_date < today
+    // Medicines list still shows all active (including depleted/ended).
+    expect((await repo.activeMedicines()).length, 4);
+    // ids referenced to avoid unused_local warnings
+    expect([ok, depleted, ended, futureEnd].every((i) => i > 0), isTrue);
+  });
 }
