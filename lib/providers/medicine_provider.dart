@@ -11,9 +11,15 @@ class MedicineProvider extends ChangeNotifier {
   final SettingsRepository _settingsRepo;
 
   List<Medicine> medicines = const [];
+  Map<int, List<String>> timesByMedicine = {};
 
   Future<void> load() async {
     medicines = await _repo.activeMedicines();
+    final map = <int, List<String>>{};
+    for (final m in medicines) {
+      map[m.id!] = (await _repo.timesFor(m.id!)).map((t) => t.timeOfDay).toList();
+    }
+    timesByMedicine = map;
     notifyListeners();
   }
 
@@ -31,4 +37,8 @@ class MedicineProvider extends ChangeNotifier {
     await _notifications.cancelForMedicine(med.id!, times);
     await load();
   }
+
+  /// Times ('HH:mm') for one medicine — used by the edit form to pre-load.
+  Future<List<String>> timesForMedicine(int id) async =>
+      (await _repo.timesFor(id)).map((t) => t.timeOfDay).toList();
 }

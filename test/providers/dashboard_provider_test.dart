@@ -19,7 +19,7 @@ class _FakeSettings {
 
 class _FakeMedicine {
   final logged = <String>[];
-  Future<List<Medicine>> activeMedicines() async => [
+  Future<List<Medicine>> dashboardMedicines(String today) async => [
         Medicine(
             id: 1,
             uuid: 'u1',

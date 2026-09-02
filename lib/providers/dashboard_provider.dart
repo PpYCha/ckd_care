@@ -52,7 +52,7 @@ class DashboardProvider extends ChangeNotifier {
     fluidTotals = await _fluid.totalsForDay(day);
     fluidLimitMl = await _settings.getFluidLimitMl();
 
-    final meds = await _medicine.activeMedicines();
+    final meds = await _medicine.dashboardMedicines(day);
     final due = <DueDose>[];
     for (final m in meds) {
       final times = await _medicine.timesFor(m.id);
