@@ -1,3 +1,7 @@
+// Collaborators are injected as `dynamic` named params (a deliberate test seam
+// per the plan) so private fields must be set in the initializer list, not via
+// initializing formals — the lint's suggested fix does not apply here.
+// ignore_for_file: prefer_initializing_formals
 import 'package:flutter/foundation.dart';
 import 'package:ckd_care/models/dose_log.dart';
 import 'package:ckd_care/models/fluid_entry.dart';
