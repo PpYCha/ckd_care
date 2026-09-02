@@ -2,12 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:ckd_care/models/dose_log.dart';
 import 'package:ckd_care/providers/dashboard_provider.dart';
 
-/// A dose row with a Taken/Skip toggle. Empty selection = Pending. Tapping a
-/// segment (re)marks the dose, so a mistouched Taken can be switched to Skip.
+/// A dose row with a Taken/Skip toggle. An unmarked dose starts on neither
+/// segment (Pending); tapping (re)marks it, so a mistouched Taken can be
+/// switched to Skip. Once marked it stays Taken/Skip (no return to Pending).
+/// [enabled] is false for future dates, where marking is disallowed.
 class DoseTile extends StatelessWidget {
-  const DoseTile({super.key, required this.dose, required this.onMark});
+  const DoseTile(
+      {super.key, required this.dose, required this.onMark, this.enabled = true});
   final DueDose dose;
   final void Function(DoseStatus) onMark;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
@@ -34,9 +38,11 @@ class DoseTile extends StatelessWidget {
         emptySelectionAllowed: true,
         showSelectedIcon: false,
         style: const ButtonStyle(visualDensity: VisualDensity.compact),
-        onSelectionChanged: (sel) {
-          if (sel.isNotEmpty) onMark(sel.first);
-        },
+        onSelectionChanged: enabled
+            ? (sel) {
+                if (sel.isNotEmpty) onMark(sel.first);
+              }
+            : null,
       ),
     );
   }

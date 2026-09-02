@@ -47,9 +47,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
         content: Text('${type == FluidType.intake ? 'Intake' : 'Output'} added')));
   }
 
+  /// A dose on a future date isn't due yet — marking it would change current
+  /// stock for something not consumed, so disallow it. Past dates (back-fill)
+  /// and today are fine.
+  bool _isFutureDate(DashboardProvider d) {
+    final t = DateTime.now();
+    return d.selectedDate.isAfter(DateTime(t.year, t.month, t.day));
+  }
+
   Future<void> _mark(DueDose dose, DoseStatus status) async {
+    final dash = context.read<DashboardProvider>();
+    if (_isFutureDate(dash)) return; // guarded; the toggle is also disabled
     final messenger = ScaffoldMessenger.of(context);
-    await context.read<DashboardProvider>().markDose(dose, status);
+    await dash.markDose(dose, status);
     messenger.showSnackBar(SnackBar(
         content: Text(
             status == DoseStatus.taken ? 'Marked as taken' : 'Marked as skipped')));
@@ -64,7 +74,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       all.where((x) => x.scheduledTime.hour >= startH && x.scheduledTime.hour < endH)
           .toList();
 
-  Widget _section(String title, List<DueDose> doses) {
+  Widget _section(String title, List<DueDose> doses, {required bool canMark}) {
     if (doses.isEmpty) return const SizedBox.shrink();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -73,7 +83,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
           padding: const EdgeInsets.only(top: 8, left: 4, bottom: 2),
           child: Text(title, style: Theme.of(context).textTheme.titleSmall),
         ),
-        ...doses.map((dose) => DoseTile(dose: dose, onMark: (s) => _mark(dose, s))),
+        ...doses.map((dose) => DoseTile(
+            dose: dose, enabled: canMark, onMark: (s) => _mark(dose, s))),
       ],
     );
   }
@@ -131,9 +142,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
         const Divider(),
         Text('Medicines', style: Theme.of(context).textTheme.titleMedium),
-        _section('Morning', _bucket(d.dueDoses, 0, 12)),
-        _section('Afternoon', _bucket(d.dueDoses, 12, 17)),
-        _section('Evening', _bucket(d.dueDoses, 17, 24)),
+        _section('Morning', _bucket(d.dueDoses, 0, 12), canMark: !_isFutureDate(d)),
+        _section('Afternoon', _bucket(d.dueDoses, 12, 17), canMark: !_isFutureDate(d)),
+        _section('Evening', _bucket(d.dueDoses, 17, 24), canMark: !_isFutureDate(d)),
         if (d.dueDoses.isEmpty)
           const ListTile(title: Text('No medicines scheduled')),
       ],
