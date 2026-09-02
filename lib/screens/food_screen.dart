@@ -43,12 +43,7 @@ class _FoodScreenState extends State<FoodScreen> {
             Icon(Icons.info_outline, size: 20, color: cs.onSurfaceVariant),
             const SizedBox(width: 10),
             Expanded(
-              child: Text(
-                'General guidance, not medical advice. Needs vary with kidney '
-                'function, dialysis, and your potassium and phosphorus levels — '
-                'follow your care team\'s plan.',
-                style: text.bodyMedium,
-              ),
+              child: Text(kFoodDisclaimer, style: text.bodyMedium),
             ),
           ]),
         ),

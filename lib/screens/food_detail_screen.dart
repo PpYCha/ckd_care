@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:ckd_care/data/food_data.dart';
 import 'package:ckd_care/models/food.dart';
 
 class FoodDetailScreen extends StatelessWidget {
@@ -71,12 +72,7 @@ class FoodDetailScreen extends StatelessWidget {
               Icon(Icons.info_outline, size: 20, color: cs.onSurfaceVariant),
               const SizedBox(width: 10),
               Expanded(
-                child: Text(
-                  'General guidance, not medical advice. Your needs depend on '
-                  'your kidney function, dialysis status, and lab results '
-                  '(potassium, phosphorus) — always follow your care team\'s plan.',
-                  style: text.bodyMedium,
-                ),
+                child: Text(kFoodDisclaimer, style: text.bodyMedium),
               ),
             ]),
           ),

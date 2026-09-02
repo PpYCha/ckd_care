@@ -1,5 +1,11 @@
 import 'package:ckd_care/models/food.dart';
 
+/// Shown on every Food entry point. One source so the wording never drifts.
+const String kFoodDisclaimer =
+    'General guidance, not medical advice. Your needs depend on your kidney '
+    'function, dialysis status, and lab results (potassium, phosphorus) — '
+    "always follow your care team's plan.";
+
 /// General CKD-oriented food guidance. Not medical advice — individual needs
 /// vary with kidney function, dialysis status, and lab values.
 const List<Food> kFoods = [
