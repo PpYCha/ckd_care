@@ -44,10 +44,31 @@ class DashboardProvider extends ChangeNotifier {
 
   DailyFluidTotals? fluidTotals;
   int? fluidLimitMl;
-  List<DueDose> dueToday = const [];
+  List<DueDose> dueDoses = const [];
+
+  DateTime? _selectedDate;
+  DateTime get selectedDate {
+    final base = _selectedDate ?? _now();
+    return DateTime(base.year, base.month, base.day);
+  }
+
+  bool get isToday {
+    final t = _now();
+    return selectedDate == DateTime(t.year, t.month, t.day);
+  }
+
+  Future<void> selectDate(DateTime d) async {
+    _selectedDate = DateTime(d.year, d.month, d.day);
+    await refresh();
+  }
+
+  Future<void> previousDay() =>
+      selectDate(selectedDate.subtract(const Duration(days: 1)));
+  Future<void> nextDay() =>
+      selectDate(selectedDate.add(const Duration(days: 1)));
 
   Future<void> refresh() async {
-    final today = _now();
+    final today = selectedDate;
     final day = FluidEntry.dayOf(today);
     fluidTotals = await _fluid.totalsForDay(day);
     fluidLimitMl = await _settings.getFluidLimitMl();
@@ -71,7 +92,7 @@ class DashboardProvider extends ChangeNotifier {
       }
     }
     due.sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));
-    dueToday = due;
+    dueDoses = due;
     notifyListeners();
   }
 

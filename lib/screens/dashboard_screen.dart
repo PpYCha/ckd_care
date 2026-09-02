@@ -15,28 +15,42 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback(
-        (_) => context.read<DashboardProvider>().refresh());
+      (_) => context.read<DashboardProvider>().refresh(),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final d = context.watch<DashboardProvider>();
-    return ListView(padding: const EdgeInsets.all(12), children: [
-      FluidGauge(
-          intakeMl: d.fluidTotals?.intakeMl ?? 0, limitMl: d.fluidLimitMl),
-      if (d.fluidTotals != null)
-        Padding(
-          padding: const EdgeInsets.all(8),
-          child: Text('Net balance: ${d.fluidTotals!.netMl} mL '
-              '(out ${d.fluidTotals!.outputMl} mL)'),
+    return ListView(
+      padding: const EdgeInsets.all(12),
+      children: [
+        FluidGauge(
+          intakeMl: d.fluidTotals?.intakeMl ?? 0,
+          limitMl: d.fluidLimitMl,
         ),
-      const Divider(),
-      Text('Today\'s medicines', style: Theme.of(context).textTheme.titleMedium),
-      ...d.dueToday.map((dose) => DoseTile(
+        if (d.fluidTotals != null)
+          Padding(
+            padding: const EdgeInsets.all(8),
+            child: Text(
+              'Net balance: ${d.fluidTotals!.netMl} mL '
+              '(out ${d.fluidTotals!.outputMl} mL)',
+            ),
+          ),
+        const Divider(),
+        Text(
+          'Today\'s medicines',
+          style: Theme.of(context).textTheme.titleMedium,
+        ),
+        ...d.dueDoses.map(
+          (dose) => DoseTile(
             dose: dose,
             onMark: (s) => context.read<DashboardProvider>().markDose(dose, s),
-          )),
-      if (d.dueToday.isEmpty) const ListTile(title: Text('No medicines scheduled')),
-    ]);
+          ),
+        ),
+        if (d.dueDoses.isEmpty)
+          const ListTile(title: Text('No medicines scheduled')),
+      ],
+    );
   }
 }

@@ -59,8 +59,8 @@ void main() {
 
     expect(p.fluidTotals!.intakeMl, 650);
     expect(p.fluidLimitMl, 1000);
-    expect(p.dueToday.single.medicineName, 'Losartan');
-    expect(p.dueToday.single.scheduledTime, DateTime(2026, 9, 2, 8));
+    expect(p.dueDoses.single.medicineName, 'Losartan');
+    expect(p.dueDoses.single.scheduledTime, DateTime(2026, 9, 2, 8));
   });
 
   test('markDose logs the dose and does not touch scheduling', () async {
@@ -74,9 +74,27 @@ void main() {
       now: () => DateTime(2026, 9, 2, 12),
     );
     await p.refresh();
-    await p.markDose(p.dueToday.single, DoseStatus.taken);
+    await p.markDose(p.dueDoses.single, DoseStatus.taken);
 
     expect(meds.logged, ['1|DoseStatus.taken']);
     expect(notes.cancelled, isEmpty);
+  });
+
+  test('previousDay/nextDay shift selectedDate and refresh', () async {
+    final p = DashboardProvider(
+      fluid: _FakeFluid(),
+      settings: _FakeSettings(),
+      medicine: _FakeMedicine(),
+      notifications: _FakeNotifications(),
+      now: () => DateTime(2026, 9, 2, 12),
+    );
+    await p.refresh();
+    expect(p.isToday, isTrue);
+    expect(p.dueDoses.single.scheduledTime, DateTime(2026, 9, 2, 8));
+
+    await p.previousDay();
+    expect(p.isToday, isFalse);
+    expect(p.selectedDate, DateTime(2026, 9, 1));
+    expect(p.dueDoses.single.scheduledTime, DateTime(2026, 9, 1, 8));
   });
 }
