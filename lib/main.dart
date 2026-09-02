@@ -15,6 +15,7 @@ import 'package:ckd_care/repositories/settings_repository.dart';
 import 'package:ckd_care/screens/dashboard_screen.dart';
 import 'package:ckd_care/screens/fluid_screen.dart';
 import 'package:ckd_care/screens/medicines_screen.dart';
+import 'package:ckd_care/screens/food_screen.dart';
 import 'package:ckd_care/screens/settings_screen.dart';
 import 'package:ckd_care/services/notification_service.dart';
 import 'package:ckd_care/theme/app_theme.dart';
@@ -121,11 +122,12 @@ class HomeShell extends StatefulWidget {
 
 class _HomeShellState extends State<HomeShell> {
   int _index = 0;
-  static const _titles = ['Dashboard', 'Fluid', 'Medicines', 'Settings'];
+  static const _titles = ['Dashboard', 'Fluid', 'Medicines', 'Food', 'Settings'];
   static const _screens = [
     DashboardScreen(),
     FluidScreen(),
     MedicinesScreen(),
+    FoodScreen(),
     SettingsScreen(),
   ];
 
@@ -141,6 +143,7 @@ class _HomeShellState extends State<HomeShell> {
           NavigationDestination(icon: Icon(Icons.dashboard), label: 'Home'),
           NavigationDestination(icon: Icon(Icons.water_drop), label: 'Fluid'),
           NavigationDestination(icon: Icon(Icons.medication), label: 'Meds'),
+          NavigationDestination(icon: Icon(Icons.restaurant_rounded), label: 'Food'),
           NavigationDestination(icon: Icon(Icons.settings), label: 'Settings'),
         ],
       ),
