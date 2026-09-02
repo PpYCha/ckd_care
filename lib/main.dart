@@ -28,6 +28,19 @@ Future<void> main() async {
     iOS: DarwinInitializationSettings(),
   ));
 
+  try {
+    await plugin
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.requestNotificationsPermission();
+    await plugin
+        .resolvePlatformSpecificImplementation<
+            IOSFlutterLocalNotificationsPlugin>()
+        ?.requestPermissions(alert: true, badge: true, sound: true);
+  } catch (e) {
+    debugPrint('Notification permission request failed: $e');
+  }
+
   final db = AppDatabase(databaseFactory);
   final fluidRepo = FluidRepository(db);
   final settingsRepo = SettingsRepository(db);
@@ -35,8 +48,16 @@ Future<void> main() async {
   final notifications = NotificationService(plugin);
 
   // Reschedule-on-boot: re-register reminders for every active medicine.
-  for (final m in await medicineRepo.activeMedicines()) {
-    await notifications.scheduleForMedicine(m.id!, await medicineRepo.timesFor(m.id!));
+  // Best-effort — a scheduling/permission failure must not block startup.
+  try {
+    if (await settingsRepo.getNotificationsEnabled()) {
+      for (final m in await medicineRepo.activeMedicines()) {
+        await notifications.scheduleForMedicine(
+            m.id!, await medicineRepo.timesFor(m.id!));
+      }
+    }
+  } catch (e) {
+    debugPrint('Boot reschedule failed: $e');
   }
 
   runApp(CkdApp(
@@ -64,10 +85,13 @@ class CkdApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (_) => SettingsProvider(settingsRepo)),
+        ChangeNotifierProvider(
+            create: (_) => SettingsProvider(
+                settingsRepo, medicineRepo, notifications)),
         ChangeNotifierProvider(create: (_) => FluidProvider(fluidRepo)),
         ChangeNotifierProvider(
-            create: (_) => MedicineProvider(medicineRepo, notifications)),
+            create: (_) =>
+                MedicineProvider(medicineRepo, notifications, settingsRepo)),
         ChangeNotifierProvider(
             create: (_) => DashboardProvider(
                   fluid: fluidRepo,

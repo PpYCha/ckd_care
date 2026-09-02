@@ -24,14 +24,17 @@ class _FakeMedicine {
             createdAt: DateTime(2026, 9, 2),
             updatedAt: DateTime(2026, 9, 2))
       ];
-  Future<List<MedicineTime>> timesFor(int id) async =>
-      [MedicineTime(uuid: 't1', timeOfDay: '08:00', updatedAt: DateTime(2026, 9, 2))];
+  Future<List<MedicineTime>> timesFor(int id) async => [
+        MedicineTime(
+            uuid: 't1',
+            medicineUuid: 'u1',
+            timeOfDay: '08:00',
+            updatedAt: DateTime(2026, 9, 2))
+      ];
   Future<dynamic> statusFor(int id, DateTime t) async => null;
 }
 
-class _FakeNotifications {
-  Future<void> cancelDose(int id, String t) async {}
-}
+class _FakeNotifications {}
 
 void main() {
   testWidgets('dashboard renders gauge and due dose', (tester) async {

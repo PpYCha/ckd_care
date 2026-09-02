@@ -1,5 +1,14 @@
 import 'package:flutter/material.dart';
 
+/// Threshold color for the gauge: red above limit, amber at/above 80%, else green.
+Color gaugeColor(int intakeMl, int limitMl) {
+  if (limitMl == 0) return Colors.green;
+  final ratio = intakeMl / limitMl;
+  if (ratio > 1.0) return Colors.red;
+  if (ratio >= 0.8) return Colors.amber;
+  return Colors.green;
+}
+
 class FluidGauge extends StatelessWidget {
   const FluidGauge({super.key, required this.intakeMl, required this.limitMl});
   final int intakeMl;
@@ -17,11 +26,7 @@ class FluidGauge extends StatelessWidget {
     }
     final limit = limitMl!;
     final ratio = limit == 0 ? 0.0 : intakeMl / limit;
-    final color = ratio > 1.0
-        ? Colors.red
-        : ratio >= 0.8
-            ? Colors.amber
-            : Colors.green;
+    final color = gaugeColor(intakeMl, limit);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),

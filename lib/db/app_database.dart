@@ -64,6 +64,7 @@ class AppDatabase {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       uuid TEXT NOT NULL UNIQUE,
       medicine_id INTEGER NOT NULL REFERENCES medicine(id),
+      medicine_uuid TEXT NOT NULL,
       time_of_day TEXT NOT NULL,
       updated_at TEXT NOT NULL,
       deleted INTEGER NOT NULL DEFAULT 0
@@ -74,6 +75,7 @@ class AppDatabase {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       uuid TEXT NOT NULL UNIQUE,
       medicine_id INTEGER NOT NULL REFERENCES medicine(id),
+      medicine_uuid TEXT NOT NULL,
       scheduled_time TEXT NOT NULL,
       status TEXT NOT NULL,
       acted_at TEXT NOT NULL,

@@ -27,8 +27,13 @@ class _FakeMedicine {
             createdAt: DateTime(2026, 9, 2),
             updatedAt: DateTime(2026, 9, 2))
       ];
-  Future<List<MedicineTime>> timesFor(int id) async =>
-      [MedicineTime(uuid: 't1', timeOfDay: '08:00', updatedAt: DateTime(2026, 9, 2))];
+  Future<List<MedicineTime>> timesFor(int id) async => [
+        MedicineTime(
+            uuid: 't1',
+            medicineUuid: 'u1',
+            timeOfDay: '08:00',
+            updatedAt: DateTime(2026, 9, 2))
+      ];
   Future<DoseStatus?> statusFor(int id, DateTime t) async => null;
   Future<void> logDose(int id, DateTime t, DoseStatus s) async =>
       logged.add('$id|$s');
@@ -57,7 +62,7 @@ void main() {
     expect(p.dueToday.single.scheduledTime, DateTime(2026, 9, 2, 8));
   });
 
-  test('markDose logs and cancels the notification', () async {
+  test('markDose logs the dose and does not touch scheduling', () async {
     final meds = _FakeMedicine();
     final notes = _FakeNotifications();
     final p = DashboardProvider(
@@ -71,6 +76,6 @@ void main() {
     await p.markDose(p.dueToday.single, DoseStatus.taken);
 
     expect(meds.logged, ['1|DoseStatus.taken']);
-    expect(notes.cancelled, ['1|08:00']);
+    expect(notes.cancelled, isEmpty);
   });
 }

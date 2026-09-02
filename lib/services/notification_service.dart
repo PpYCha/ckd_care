@@ -44,9 +44,6 @@ class NotificationService {
     }
   }
 
-  Future<void> cancelDose(int medicineId, String timeOfDay) =>
-      _plugin.cancel(notificationId(medicineId, timeOfDay));
-
   tz.TZDateTime _nextInstanceOf(String timeOfDay) {
     final parts = timeOfDay.split(':');
     final now = tz.TZDateTime.now(tz.local);

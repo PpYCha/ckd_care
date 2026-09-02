@@ -1,12 +1,14 @@
 import 'package:flutter/foundation.dart';
 import 'package:ckd_care/models/medicine.dart';
 import 'package:ckd_care/repositories/medicine_repository.dart';
+import 'package:ckd_care/repositories/settings_repository.dart';
 import 'package:ckd_care/services/notification_service.dart';
 
 class MedicineProvider extends ChangeNotifier {
-  MedicineProvider(this._repo, this._notifications);
+  MedicineProvider(this._repo, this._notifications, this._settingsRepo);
   final MedicineRepository _repo;
   final NotificationService _notifications;
+  final SettingsRepository _settingsRepo;
 
   List<Medicine> medicines = const [];
 
@@ -17,7 +19,9 @@ class MedicineProvider extends ChangeNotifier {
 
   Future<void> save(Medicine med, List<String> times) async {
     final id = await _repo.saveMedicine(med, times);
-    await _notifications.scheduleForMedicine(id, await _repo.timesFor(id));
+    if (await _settingsRepo.getNotificationsEnabled()) {
+      await _notifications.scheduleForMedicine(id, await _repo.timesFor(id));
+    }
     await load();
   }
 

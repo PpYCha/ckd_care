@@ -47,6 +47,7 @@ class MedicineTime {
     this.id,
     required this.uuid,
     this.medicineId,
+    required this.medicineUuid,
     required this.timeOfDay,
     required this.updatedAt,
     this.deleted = false,
@@ -55,6 +56,7 @@ class MedicineTime {
   final int? id;
   final String uuid;
   final int? medicineId;
+  final String medicineUuid;
   final String timeOfDay; // 'HH:mm'
   final DateTime updatedAt;
   final bool deleted;
@@ -63,6 +65,7 @@ class MedicineTime {
         id: m['id'] as int?,
         uuid: m['uuid'] as String,
         medicineId: m['medicine_id'] as int?,
+        medicineUuid: m['medicine_uuid'] as String,
         timeOfDay: m['time_of_day'] as String,
         updatedAt: DateTime.parse(m['updated_at'] as String),
         deleted: (m['deleted'] as int) == 1,
@@ -72,6 +75,7 @@ class MedicineTime {
         if (id != null) 'id': id,
         'uuid': uuid,
         if (medicineId != null) 'medicine_id': medicineId,
+        'medicine_uuid': medicineUuid,
         'time_of_day': timeOfDay,
         'updated_at': updatedAt.toIso8601String(),
         'deleted': deleted ? 1 : 0,

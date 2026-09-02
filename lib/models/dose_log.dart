@@ -5,6 +5,7 @@ class DoseLog {
     this.id,
     required this.uuid,
     required this.medicineId,
+    required this.medicineUuid,
     required this.scheduledTime,
     required this.status,
     required this.actedAt,
@@ -15,6 +16,7 @@ class DoseLog {
   final int? id;
   final String uuid;
   final int medicineId;
+  final String medicineUuid;
   final DateTime scheduledTime;
   final DoseStatus status;
   final DateTime actedAt;
@@ -25,6 +27,7 @@ class DoseLog {
         id: m['id'] as int?,
         uuid: m['uuid'] as String,
         medicineId: m['medicine_id'] as int,
+        medicineUuid: m['medicine_uuid'] as String,
         scheduledTime: DateTime.parse(m['scheduled_time'] as String),
         status: DoseStatus.values.byName(m['status'] as String),
         actedAt: DateTime.parse(m['acted_at'] as String),
@@ -36,6 +39,7 @@ class DoseLog {
         if (id != null) 'id': id,
         'uuid': uuid,
         'medicine_id': medicineId,
+        'medicine_uuid': medicineUuid,
         'scheduled_time': scheduledTime.toIso8601String(),
         'status': status.name,
         'acted_at': actedAt.toIso8601String(),

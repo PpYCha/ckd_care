@@ -26,6 +26,7 @@ class MedicineRepository {
         await txn.insert('medicine_time', {
           'uuid': newUuid(),
           'medicine_id': id,
+          'medicine_uuid': med.uuid,
           'time_of_day': t,
           'updated_at': now,
           'deleted': 0,
@@ -66,12 +67,16 @@ class MedicineRepository {
     final now = DateTime.now().toIso8601String();
     final existing = await db.query('dose_log',
         columns: ['id'],
-        where: 'medicine_id = ? AND scheduled_time = ?',
+        where: 'medicine_id = ? AND scheduled_time = ? AND deleted = 0',
         whereArgs: [medicineId, iso]);
     if (existing.isEmpty) {
+      final medRows = await db.query('medicine',
+          columns: ['uuid'], where: 'id = ?', whereArgs: [medicineId]);
+      final medicineUuid = medRows.first['uuid'] as String;
       await db.insert('dose_log', {
         'uuid': newUuid(),
         'medicine_id': medicineId,
+        'medicine_uuid': medicineUuid,
         'scheduled_time': iso,
         'status': status.name,
         'acted_at': now,

@@ -27,18 +27,19 @@ class DashboardProvider extends ChangeNotifier {
     required dynamic fluid,
     required dynamic settings,
     required dynamic medicine,
+    // Accepted for API stability (constructed with a notifications
+    // collaborator by callers/tests) but no longer used: markDose must not
+    // touch scheduling (see Fix 3).
     required dynamic notifications,
     DateTime Function()? now,
   })  : _fluid = fluid,
         _settings = settings,
         _medicine = medicine,
-        _notifications = notifications,
         _now = now ?? DateTime.now;
 
   final dynamic _fluid;
   final dynamic _settings;
   final dynamic _medicine;
-  final dynamic _notifications;
   final DateTime Function() _now;
 
   DailyFluidTotals? fluidTotals;
@@ -76,7 +77,6 @@ class DashboardProvider extends ChangeNotifier {
 
   Future<void> markDose(DueDose dose, DoseStatus status) async {
     await _medicine.logDose(dose.medicineId, dose.scheduledTime, status);
-    await _notifications.cancelDose(dose.medicineId, dose.timeOfDay);
     await refresh();
   }
 }
