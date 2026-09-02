@@ -17,6 +17,7 @@ import 'package:ckd_care/screens/fluid_screen.dart';
 import 'package:ckd_care/screens/medicines_screen.dart';
 import 'package:ckd_care/screens/settings_screen.dart';
 import 'package:ckd_care/services/notification_service.dart';
+import 'package:ckd_care/theme/app_theme.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -102,7 +103,8 @@ class CkdApp extends StatelessWidget {
       ],
       child: MaterialApp(
         title: 'CKD Care',
-        theme: ThemeData(colorSchemeSeed: Colors.teal, useMaterial3: true),
+        debugShowCheckedModeBanner: false,
+        theme: buildAppTheme(),
         home: const HomeShell(),
       ),
     );

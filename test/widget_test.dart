@@ -5,6 +5,7 @@ import 'package:ckd_care/models/medicine.dart';
 import 'package:ckd_care/providers/dashboard_provider.dart';
 import 'package:ckd_care/repositories/fluid_repository.dart';
 import 'package:ckd_care/screens/dashboard_screen.dart';
+import 'package:ckd_care/widgets/fluid_gauge.dart';
 
 class _FakeFluid {
   Future<DailyFluidTotals> totalsForDay(String day) async =>
@@ -54,7 +55,10 @@ void main() {
     ));
     await tester.pumpAndSettle();
 
-    expect(find.text('650 / 1000 mL'), findsOneWidget);
+    // Gauge renders today's intake vs limit (the "650" and "/ 1000 mL" spans).
+    expect(find.byType(FluidGauge), findsOneWidget);
+    expect(find.textContaining('650', findRichText: true), findsWidgets);
+    expect(find.textContaining('1000', findRichText: true), findsWidgets);
     expect(find.textContaining('Losartan'), findsOneWidget);
   });
 }
