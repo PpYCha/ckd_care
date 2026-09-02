@@ -24,6 +24,7 @@ class _FakeMedicine {
             id: 1,
             uuid: 'u1',
             name: 'Losartan',
+            stockQty: 10,
             createdAt: DateTime(2026, 9, 2),
             updatedAt: DateTime(2026, 9, 2))
       ];

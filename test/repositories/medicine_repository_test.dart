@@ -17,9 +17,10 @@ void main() {
   });
   tearDown(() => db.close());
 
-  Medicine med(String name) => Medicine(
+  Medicine med(String name, {int stock = 10}) => Medicine(
       uuid: newUuid(),
       name: name,
+      stockQty: stock,
       createdAt: DateTime(2026, 9, 2),
       updatedAt: DateTime(2026, 9, 2));
 
@@ -33,6 +34,7 @@ void main() {
             id: id,
             uuid: newUuid(),
             name: 'Losartan',
+            stockQty: 10,
             createdAt: DateTime(2026, 9, 2),
             updatedAt: DateTime(2026, 9, 2)),
         ['09:00']);

@@ -34,6 +34,8 @@ class _MedicineDetailScreenState extends State<MedicineDetailScreen> {
       uuid: widget.medicine?.uuid ?? newUuid(),
       name: _name.text.trim(),
       dosage: _dosage.text.trim().isEmpty ? null : _dosage.text.trim(),
+      stockQty: widget.medicine?.stockQty ?? 0,
+      endDate: widget.medicine?.endDate,
       createdAt: widget.medicine?.createdAt ?? DateTime.now(),
       updatedAt: DateTime.now(),
     );
