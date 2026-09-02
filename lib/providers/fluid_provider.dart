@@ -30,6 +30,11 @@ class FluidProvider extends ChangeNotifier {
     await loadDay(day);
   }
 
+  Future<void> update(FluidEntry entry) async {
+    await _repo.update(entry);
+    await loadDay(day);
+  }
+
   Future<void> remove(int id) async {
     await _repo.delete(id);
     await loadDay(day);

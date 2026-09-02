@@ -17,6 +17,12 @@ class FluidRepository {
     return db.insert('fluid_entry', entry.toMap());
   }
 
+  Future<void> update(FluidEntry entry) async {
+    final db = await _db.database;
+    await db.update('fluid_entry', entry.toMap(),
+        where: 'id = ?', whereArgs: [entry.id]);
+  }
+
   Future<void> delete(int id) async {
     final db = await _db.database;
     await db.update(

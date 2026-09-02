@@ -56,4 +56,26 @@ void main() {
     expect(totals.outputMl, 0);
     expect(totals.netMl, 0);
   });
+
+  test('update changes an entry amount and keeps it on its day', () async {
+    final at = DateTime(2026, 9, 2, 9);
+    final id = await repo.add(entry(FluidType.intake, 250, at));
+    final original = (await repo.entriesForDay(FluidEntry.dayOf(at))).single;
+
+    final edited = FluidEntry(
+      id: original.id,
+      uuid: original.uuid,
+      type: original.type,
+      amountMl: 400,
+      loggedAt: original.loggedAt,
+      day: original.day,
+      note: original.note,
+      updatedAt: DateTime(2026, 9, 2, 10),
+    );
+    await repo.update(edited);
+
+    final after = (await repo.entriesForDay(FluidEntry.dayOf(at))).single;
+    expect(after.id, id);
+    expect(after.amountMl, 400);
+  });
 }
