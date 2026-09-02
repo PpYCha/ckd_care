@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:ckd_care/models/medicine.dart';
 import 'package:ckd_care/services/notification_service.dart';
 
 void main() {
