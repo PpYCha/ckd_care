@@ -69,8 +69,8 @@ class _MedicineDetailScreenState extends State<MedicineDetailScreen> {
     setState(() => _timesError = _times.isEmpty);
     if (!formOk || _times.isEmpty) return;
 
-    final messenger = ScaffoldMessenger.of(context);
     final navigator = Navigator.of(context);
+    final isEdit = widget.medicine != null;
     final med = Medicine(
       id: widget.medicine?.id,
       uuid: widget.medicine?.uuid ?? newUuid(),
@@ -83,9 +83,34 @@ class _MedicineDetailScreenState extends State<MedicineDetailScreen> {
     );
     await context.read<MedicineProvider>().save(med, _times..sort());
     if (!mounted) return;
-    navigator.pop();
-    messenger.showSnackBar(
-        const SnackBar(content: Text('Saved successfully')));
+    // Return a result; the (always-mounted) list screen shows the toast.
+    navigator.pop(isEdit ? 'updated' : 'added');
+  }
+
+  Future<void> _confirmAndDelete() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete medicine?'),
+        content: Text(
+            'Are you sure you want to delete "${widget.medicine!.name}"? '
+            'This cannot be undone.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Delete')),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    final provider = context.read<MedicineProvider>();
+    final navigator = Navigator.of(context);
+    await provider.deactivate(widget.medicine!);
+    if (!mounted) return;
+    navigator.pop('deleted');
   }
 
   @override
@@ -97,12 +122,7 @@ class _MedicineDetailScreenState extends State<MedicineDetailScreen> {
           if (widget.medicine != null)
             IconButton(
               icon: const Icon(Icons.delete),
-              onPressed: () async {
-                final provider = context.read<MedicineProvider>();
-                final navigator = Navigator.of(context);
-                await provider.deactivate(widget.medicine!);
-                if (mounted) navigator.pop();
-              },
+              onPressed: _confirmAndDelete,
             ),
         ],
       ),

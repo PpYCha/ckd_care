@@ -18,6 +18,29 @@ class _MedicinesScreenState extends State<MedicinesScreen> {
         .addPostFrameCallback((_) => context.read<MedicineProvider>().load());
   }
 
+  /// Opens add/edit and shows a confirmation toast based on the returned result.
+  /// The toast is shown here (not in the detail screen) so the messenger belongs
+  /// to a widget that stays mounted after the detail route pops.
+  Future<void> _openDetail(Medicine? medicine) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final result = await Navigator.push<String>(
+      context,
+      MaterialPageRoute(builder: (_) => MedicineDetailScreen(medicine: medicine)),
+    );
+    if (!mounted || result == null) return;
+    final msg = switch (result) {
+      'added' => 'Medicine added',
+      'updated' => 'Medicine updated',
+      'deleted' => 'Medicine deleted',
+      _ => null,
+    };
+    if (msg != null) {
+      messenger
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(msg)));
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final p = context.watch<MedicineProvider>();
@@ -36,18 +59,12 @@ class _MedicinesScreenState extends State<MedicinesScreen> {
             trailing: m.stockQty == 0
                 ? const Chip(label: Text('Out of stock'))
                 : null,
-            onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) => MedicineDetailScreen(medicine: m))),
+            onTap: () => _openDetail(m),
           ),
         if (p.medicines.isEmpty) const ListTile(title: Text('No medicines yet')),
       ]),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(
-                builder: (_) => const MedicineDetailScreen(medicine: null))),
+        onPressed: () => _openDetail(null),
         child: const Icon(Icons.add),
       ),
     );

@@ -20,21 +20,29 @@ class NotificationService {
     return medicineId * 1440 + minutes;
   }
 
+  /// Best-effort: scheduling a reminder must never break the caller (e.g. saving
+  /// a medicine). Uses INEXACT alarms so no SCHEDULE_EXACT_ALARM permission is
+  /// required — exact alarms throw PlatformException(exact_alarms_not_permitted)
+  /// on Android 13+, and a few minutes' drift is fine for a daily reminder.
   Future<void> scheduleForMedicine(int medicineId, List<MedicineTime> times) async {
     await cancelForMedicine(medicineId, times);
     for (final t in times) {
-      await _plugin.zonedSchedule(
-        notificationId(medicineId, t.timeOfDay),
-        'Time for your medicine',
-        'Tap to mark taken or skipped',
-        _nextInstanceOf(t.timeOfDay),
-        _details,
-        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-        matchDateTimeComponents: DateTimeComponents.time, // repeat daily
-        uiLocalNotificationDateInterpretation:
-            UILocalNotificationDateInterpretation.absoluteTime,
-        payload: '$medicineId|${t.timeOfDay}',
-      );
+      try {
+        await _plugin.zonedSchedule(
+          notificationId(medicineId, t.timeOfDay),
+          'Time for your medicine',
+          'Tap to mark taken or skipped',
+          _nextInstanceOf(t.timeOfDay),
+          _details,
+          androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+          matchDateTimeComponents: DateTimeComponents.time, // repeat daily
+          uiLocalNotificationDateInterpretation:
+              UILocalNotificationDateInterpretation.absoluteTime,
+          payload: '$medicineId|${t.timeOfDay}',
+        );
+      } catch (_) {
+        // Reminder scheduling is best-effort; the dashboard is the source of truth.
+      }
     }
   }
 
