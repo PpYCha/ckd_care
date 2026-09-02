@@ -135,6 +135,7 @@ class _MedicineDetailScreenState extends State<MedicineDetailScreen> {
             validator: (v) =>
                 (v == null || v.trim().isEmpty) ? 'Name is required' : null,
           ),
+          const SizedBox(height: 14),
           TextFormField(
             controller: _stock,
             keyboardType: TextInputType.number,
