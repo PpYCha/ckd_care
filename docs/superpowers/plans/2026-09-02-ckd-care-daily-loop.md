@@ -6,15 +6,19 @@
 
 **Architecture:** `Widget → Provider (ChangeNotifier) → Repository → SQLite`. Repositories are the only code touching the DB and return typed models, so providers and UI test against fakes. A local notification service schedules medicine reminders with stable, idempotent IDs. Schema is versioned from v1 so Group B/C are later migrations.
 
-**Tech Stack:** Flutter, `provider`, `sqflite` + `path`, `flutter_local_notifications`, `sqflite_common_ffi` (test-only), `timezone` (required by flutter_local_notifications for zoned scheduling).
+**Tech Stack:** Flutter, `provider`, `sqflite` + `path`, `uuid`, `flutter_local_notifications`, `sqflite_common_ffi` (test-only), `timezone` (required by flutter_local_notifications for zoned scheduling).
 
 ## Global Constraints
 
 - Dart SDK: `^3.13.2` (existing `pubspec.yaml`).
-- Local-only: no network, no accounts, no sync. Never add a cloud/HTTP dependency.
-- All DB access goes through repositories; UI/providers never touch `sqflite` directly.
+- Group A is offline-only: no network calls, no accounts. Do NOT add Supabase/HTTP now — online sync is deferred Group D. But the schema is **sync-ready**: build the columns below, no sync code.
+- All DB access goes through repositories; UI/providers never touch `sqflite` directly. Repositories are the swap/sync seam.
 - Repository methods return typed models, never raw `Map` rows.
-- Dates: `logged_at` / `acted_at` / `scheduled_time` = full ISO-8601 (`DateTime.toIso8601String()`); `day` = `'YYYY-MM-DD'`.
+- **Sync-metadata columns** on every *data* table (`fluid_entry`, `medicine`, `medicine_time`, `dose_log`) — NOT on `setting` (device-local):
+  - `uuid TEXT NOT NULL UNIQUE` — client-generated v4, set once at insert via `newUuid()`, immutable.
+  - `updated_at TEXT NOT NULL` — set to `DateTime.now().toIso8601String()` on every insert AND update.
+  - `deleted INTEGER NOT NULL DEFAULT 0` — all deletes are **soft** (`deleted = 1` + bump `updated_at`); every read filters `deleted = 0`.
+- Dates: `logged_at` / `acted_at` / `scheduled_time` / `updated_at` / `created_at` = full ISO-8601 (`DateTime.toIso8601String()`); `day` = `'YYYY-MM-DD'`.
 - Fluid amounts are whole `int` milliliters.
 - `flutter analyze` clean and `flutter test` green is the gate before any task is "done".
 - Follow `package:flutter_lints` (already active). Prefer `const` constructors where the linter asks.
@@ -27,6 +31,7 @@
 lib/
   main.dart                       # app entry: init DB + notifications, reschedule-on-boot, provide providers
   db/app_database.dart            # open DB, schema v1, onUpgrade migrations
+  db/ids.dart                     # newUuid() helper (client-generated v4)
   models/
     fluid_entry.dart
     medicine.dart                 # Medicine + MedicineTime
@@ -68,7 +73,7 @@ Adds packages and the versioned SQLite opener with schema v1. Establishes the in
 
 **Files:**
 - Modify: `pubspec.yaml` (dependencies)
-- Create: `lib/db/app_database.dart`
+- Create: `lib/db/app_database.dart`, `lib/db/ids.dart`
 - Test: `test/db/app_database_test.dart`
 
 **Interfaces:**
@@ -85,6 +90,7 @@ Edit `pubspec.yaml`. Under `dependencies:` (after `cupertino_icons`):
   sqflite: ^2.3.3
   path: ^1.9.0
   provider: ^6.1.2
+  uuid: ^4.5.1
   flutter_local_notifications: ^17.2.3
   timezone: ^0.9.4
 ```
@@ -190,40 +196,65 @@ class AppDatabase {
     '''
     CREATE TABLE fluid_entry(
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      uuid TEXT NOT NULL UNIQUE,
       type TEXT NOT NULL,
       amount_ml INTEGER NOT NULL,
       logged_at TEXT NOT NULL,
       day TEXT NOT NULL,
-      note TEXT
+      note TEXT,
+      updated_at TEXT NOT NULL,
+      deleted INTEGER NOT NULL DEFAULT 0
     )''',
     'CREATE INDEX idx_fluid_day ON fluid_entry(day, type)',
     '''
     CREATE TABLE medicine(
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      uuid TEXT NOT NULL UNIQUE,
       name TEXT NOT NULL,
       dosage TEXT,
       active INTEGER NOT NULL DEFAULT 1,
-      created_at TEXT NOT NULL
+      created_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      deleted INTEGER NOT NULL DEFAULT 0
     )''',
     '''
     CREATE TABLE medicine_time(
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      uuid TEXT NOT NULL UNIQUE,
       medicine_id INTEGER NOT NULL REFERENCES medicine(id),
-      time_of_day TEXT NOT NULL
+      time_of_day TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      deleted INTEGER NOT NULL DEFAULT 0
     )''',
     'CREATE INDEX idx_time_med ON medicine_time(medicine_id)',
     '''
     CREATE TABLE dose_log(
       id INTEGER PRIMARY KEY AUTOINCREMENT,
+      uuid TEXT NOT NULL UNIQUE,
       medicine_id INTEGER NOT NULL REFERENCES medicine(id),
       scheduled_time TEXT NOT NULL,
       status TEXT NOT NULL,
-      acted_at TEXT NOT NULL
+      acted_at TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      deleted INTEGER NOT NULL DEFAULT 0
     )''',
     'CREATE INDEX idx_dose_med_time ON dose_log(medicine_id, scheduled_time)',
     'CREATE TABLE setting(key TEXT PRIMARY KEY, value TEXT NOT NULL)',
   ];
 }
+```
+
+- [ ] **Step 5b: Add the uuid helper**
+
+Create `lib/db/ids.dart`:
+
+```dart
+import 'package:uuid/uuid.dart';
+
+const _uuid = Uuid();
+
+/// Client-generated v4 UUID — the sync-stable identity for every data row.
+String newUuid() => _uuid.v4();
 ```
 
 - [ ] **Step 6: Run test to verify it passes**
@@ -234,8 +265,8 @@ Expected: PASS.
 - [ ] **Step 7: Commit**
 
 ```bash
-git add pubspec.yaml pubspec.lock lib/db/app_database.dart test/db/app_database_test.dart
-git commit -m "feat: add deps and versioned SQLite schema v1"
+git add pubspec.yaml pubspec.lock lib/db/app_database.dart lib/db/ids.dart test/db/app_database_test.dart
+git commit -m "feat: add deps and sync-ready SQLite schema v1"
 ```
 
 ---
@@ -249,12 +280,12 @@ Plain immutable Dart classes with `fromMap`/`toMap`. No DB access. Kept in one t
 - Test: none dedicated (exercised via repository tests in Tasks 3–5).
 
 **Interfaces:**
-- Produces:
+- Produces (every data model carries `String uuid`, `DateTime updatedAt`, `bool deleted` — the sync-metadata fields; `uuid`/`updatedAt` required in the constructor, `deleted` defaults `false`):
   - `enum FluidType { intake, output }` (in `fluid_entry.dart`).
-  - `class FluidEntry { final int? id; final FluidType type; final int amountMl; final DateTime loggedAt; final String day; final String? note; }` with `FluidEntry.fromMap(Map<String,Object?>)`, `Map<String,Object?> toMap()`, and `static String dayOf(DateTime dt)` returning `'YYYY-MM-DD'`.
-  - `class Medicine { final int? id; final String name; final String? dosage; final bool active; final DateTime createdAt; }` + `fromMap`/`toMap`.
-  - `class MedicineTime { final int? id; final int? medicineId; final String timeOfDay; }` (`timeOfDay` = `'HH:mm'`) + `fromMap`/`toMap`.
-  - `enum DoseStatus { taken, skipped }` and `class DoseLog { final int? id; final int medicineId; final DateTime scheduledTime; final DoseStatus status; final DateTime actedAt; }` + `fromMap`/`toMap`.
+  - `class FluidEntry { final int? id; final String uuid; final FluidType type; final int amountMl; final DateTime loggedAt; final String day; final String? note; final DateTime updatedAt; final bool deleted; }` with `FluidEntry.fromMap(Map<String,Object?>)`, `Map<String,Object?> toMap()`, and `static String dayOf(DateTime dt)` returning `'YYYY-MM-DD'`.
+  - `class Medicine { final int? id; final String uuid; final String name; final String? dosage; final bool active; final DateTime createdAt; final DateTime updatedAt; final bool deleted; }` + `fromMap`/`toMap`.
+  - `class MedicineTime { final int? id; final String uuid; final int? medicineId; final String timeOfDay; final DateTime updatedAt; final bool deleted; }` (`timeOfDay` = `'HH:mm'`) + `fromMap`/`toMap`.
+  - `enum DoseStatus { taken, skipped }` and `class DoseLog { final int? id; final String uuid; final int medicineId; final DateTime scheduledTime; final DoseStatus status; final DateTime actedAt; final DateTime updatedAt; final bool deleted; }` + `fromMap`/`toMap`.
 
 - [ ] **Step 1: Implement `fluid_entry.dart`**
 
@@ -266,19 +297,25 @@ enum FluidType { intake, output }
 class FluidEntry {
   const FluidEntry({
     this.id,
+    required this.uuid,
     required this.type,
     required this.amountMl,
     required this.loggedAt,
     required this.day,
     this.note,
+    required this.updatedAt,
+    this.deleted = false,
   });
 
   final int? id;
+  final String uuid;
   final FluidType type;
   final int amountMl;
   final DateTime loggedAt;
   final String day;
   final String? note;
+  final DateTime updatedAt;
+  final bool deleted;
 
   static String dayOf(DateTime dt) =>
       '${dt.year.toString().padLeft(4, '0')}-'
@@ -287,20 +324,26 @@ class FluidEntry {
 
   factory FluidEntry.fromMap(Map<String, Object?> m) => FluidEntry(
         id: m['id'] as int?,
+        uuid: m['uuid'] as String,
         type: FluidType.values.byName(m['type'] as String),
         amountMl: m['amount_ml'] as int,
         loggedAt: DateTime.parse(m['logged_at'] as String),
         day: m['day'] as String,
         note: m['note'] as String?,
+        updatedAt: DateTime.parse(m['updated_at'] as String),
+        deleted: (m['deleted'] as int) == 1,
       );
 
   Map<String, Object?> toMap() => {
         if (id != null) 'id': id,
+        'uuid': uuid,
         'type': type.name,
         'amount_ml': amountMl,
         'logged_at': loggedAt.toIso8601String(),
         'day': day,
         'note': note,
+        'updated_at': updatedAt.toIso8601String(),
+        'deleted': deleted ? 1 : 0,
       };
 }
 ```
@@ -313,52 +356,80 @@ Create `lib/models/medicine.dart`:
 class Medicine {
   const Medicine({
     this.id,
+    required this.uuid,
     required this.name,
     this.dosage,
     this.active = true,
     required this.createdAt,
+    required this.updatedAt,
+    this.deleted = false,
   });
 
   final int? id;
+  final String uuid;
   final String name;
   final String? dosage;
   final bool active;
   final DateTime createdAt;
+  final DateTime updatedAt;
+  final bool deleted;
 
   factory Medicine.fromMap(Map<String, Object?> m) => Medicine(
         id: m['id'] as int?,
+        uuid: m['uuid'] as String,
         name: m['name'] as String,
         dosage: m['dosage'] as String?,
         active: (m['active'] as int) == 1,
         createdAt: DateTime.parse(m['created_at'] as String),
+        updatedAt: DateTime.parse(m['updated_at'] as String),
+        deleted: (m['deleted'] as int) == 1,
       );
 
   Map<String, Object?> toMap() => {
         if (id != null) 'id': id,
+        'uuid': uuid,
         'name': name,
         'dosage': dosage,
         'active': active ? 1 : 0,
         'created_at': createdAt.toIso8601String(),
+        'updated_at': updatedAt.toIso8601String(),
+        'deleted': deleted ? 1 : 0,
       };
 }
 
 class MedicineTime {
-  const MedicineTime({this.id, this.medicineId, required this.timeOfDay});
+  const MedicineTime({
+    this.id,
+    required this.uuid,
+    this.medicineId,
+    required this.timeOfDay,
+    required this.updatedAt,
+    this.deleted = false,
+  });
 
   final int? id;
+  final String uuid;
   final int? medicineId;
   final String timeOfDay; // 'HH:mm'
+  final DateTime updatedAt;
+  final bool deleted;
 
   factory MedicineTime.fromMap(Map<String, Object?> m) => MedicineTime(
         id: m['id'] as int?,
+        uuid: m['uuid'] as String,
         medicineId: m['medicine_id'] as int?,
         timeOfDay: m['time_of_day'] as String,
+        updatedAt: DateTime.parse(m['updated_at'] as String),
+        deleted: (m['deleted'] as int) == 1,
       );
 
   Map<String, Object?> toMap() => {
         if (id != null) 'id': id,
+        'uuid': uuid,
         if (medicineId != null) 'medicine_id': medicineId,
         'time_of_day': timeOfDay,
+        'updated_at': updatedAt.toIso8601String(),
+        'deleted': deleted ? 1 : 0,
       };
 }
 ```
@@ -373,32 +444,44 @@ enum DoseStatus { taken, skipped }
 class DoseLog {
   const DoseLog({
     this.id,
+    required this.uuid,
     required this.medicineId,
     required this.scheduledTime,
     required this.status,
     required this.actedAt,
+    required this.updatedAt,
+    this.deleted = false,
   });
 
   final int? id;
+  final String uuid;
   final int medicineId;
   final DateTime scheduledTime;
   final DoseStatus status;
   final DateTime actedAt;
+  final DateTime updatedAt;
+  final bool deleted;
 
   factory DoseLog.fromMap(Map<String, Object?> m) => DoseLog(
         id: m['id'] as int?,
+        uuid: m['uuid'] as String,
         medicineId: m['medicine_id'] as int,
         scheduledTime: DateTime.parse(m['scheduled_time'] as String),
         status: DoseStatus.values.byName(m['status'] as String),
         actedAt: DateTime.parse(m['acted_at'] as String),
+        updatedAt: DateTime.parse(m['updated_at'] as String),
+        deleted: (m['deleted'] as int) == 1,
       );
 
   Map<String, Object?> toMap() => {
         if (id != null) 'id': id,
+        'uuid': uuid,
         'medicine_id': medicineId,
         'scheduled_time': scheduledTime.toIso8601String(),
         'status': status.name,
         'acted_at': actedAt.toIso8601String(),
+        'updated_at': updatedAt.toIso8601String(),
+        'deleted': deleted ? 1 : 0,
       };
 }
 ```
@@ -429,10 +512,10 @@ CRUD for fluid entries plus the daily rollup the dashboard needs.
 - Consumes: `AppDatabase`, `FluidEntry`, `FluidType`.
 - Produces `class FluidRepository`:
   - `FluidRepository(this._db)` where `_db` is `AppDatabase`.
-  - `Future<int> add(FluidEntry entry)` → new row id.
-  - `Future<void> delete(int id)`.
-  - `Future<List<FluidEntry>> entriesForDay(String day)` ordered by `logged_at`.
-  - `Future<DailyFluidTotals> totalsForDay(String day)`.
+  - `Future<int> add(FluidEntry entry)` → new row id. Caller supplies `uuid` (`newUuid()`) and `updatedAt`.
+  - `Future<void> delete(int id)` — **soft-delete**: sets `deleted = 1` and bumps `updated_at`.
+  - `Future<List<FluidEntry>> entriesForDay(String day)` — filters `deleted = 0`, ordered by `logged_at`.
+  - `Future<DailyFluidTotals> totalsForDay(String day)` — filters `deleted = 0`.
   - `class DailyFluidTotals { final int intakeMl; final int outputMl; int get netMl => intakeMl - outputMl; }`.
 
 - [ ] **Step 1: Write the failing test**
@@ -443,6 +526,7 @@ Create `test/repositories/fluid_repository_test.dart`:
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:ckd_care/db/app_database.dart';
+import 'package:ckd_care/db/ids.dart';
 import 'package:ckd_care/models/fluid_entry.dart';
 import 'package:ckd_care/repositories/fluid_repository.dart';
 
@@ -457,8 +541,14 @@ void main() {
   });
   tearDown(() => db.close());
 
-  FluidEntry entry(FluidType t, int ml, DateTime at) =>
-      FluidEntry(type: t, amountMl: ml, loggedAt: at, day: FluidEntry.dayOf(at));
+  FluidEntry entry(FluidType t, int ml, DateTime at) => FluidEntry(
+        uuid: newUuid(),
+        type: t,
+        amountMl: ml,
+        loggedAt: at,
+        day: FluidEntry.dayOf(at),
+        updatedAt: at,
+      );
 
   test('totals sum intake and output per day and compute net', () async {
     final today = DateTime(2026, 9, 2, 8);
@@ -525,13 +615,20 @@ class FluidRepository {
 
   Future<void> delete(int id) async {
     final db = await _db.database;
-    await db.delete('fluid_entry', where: 'id = ?', whereArgs: [id]);
+    await db.update(
+      'fluid_entry',
+      {'deleted': 1, 'updated_at': DateTime.now().toIso8601String()},
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 
   Future<List<FluidEntry>> entriesForDay(String day) async {
     final db = await _db.database;
     final rows = await db.query('fluid_entry',
-        where: 'day = ?', whereArgs: [day], orderBy: 'logged_at ASC');
+        where: 'day = ? AND deleted = 0',
+        whereArgs: [day],
+        orderBy: 'logged_at ASC');
     return rows.map(FluidEntry.fromMap).toList();
   }
 
@@ -539,7 +636,7 @@ class FluidRepository {
     final db = await _db.database;
     final rows = await db.rawQuery(
       "SELECT type, COALESCE(SUM(amount_ml), 0) AS total "
-      "FROM fluid_entry WHERE day = ? GROUP BY type",
+      "FROM fluid_entry WHERE day = ? AND deleted = 0 GROUP BY type",
       [day],
     );
     var intake = 0, output = 0;
@@ -697,13 +794,13 @@ Medicines + their times + the idempotent adherence log.
 - Consumes: `AppDatabase`, `Medicine`, `MedicineTime`, `DoseLog`, `DoseStatus`.
 - Produces `class MedicineRepository`:
   - `MedicineRepository(this._db)`.
-  - `Future<int> saveMedicine(Medicine med, List<String> times)` — inserts or updates the medicine and **replaces** its `medicine_time` rows with `times` (`'HH:mm'`); returns the medicine id.
-  - `Future<List<Medicine>> activeMedicines()` — `active = 1`, ordered by name.
-  - `Future<List<MedicineTime>> timesFor(int medicineId)`.
-  - `Future<void> deactivate(int medicineId)` — sets `active = 0`.
-  - `Future<void> logDose(int medicineId, DateTime scheduledTime, DoseStatus status)` — idempotent per `(medicineId, scheduledTime)`: updates the existing row's status if present, else inserts.
-  - `Future<List<DoseLog>> dosesForMedicine(int medicineId)` — newest first.
-  - `Future<DoseStatus?> statusFor(int medicineId, DateTime scheduledTime)` — null when not acted on.
+  - `Future<int> saveMedicine(Medicine med, List<String> times)` — inserts or updates the medicine (caller supplies `uuid`/`updatedAt`) and **replaces** its `medicine_time` rows with `times` (`'HH:mm'`) via soft-delete of old rows + insert of new ones (each new row gets `newUuid()` + `updated_at`); returns the medicine id.
+  - `Future<List<Medicine>> activeMedicines()` — `active = 1 AND deleted = 0`, ordered by name.
+  - `Future<List<MedicineTime>> timesFor(int medicineId)` — filters `deleted = 0`.
+  - `Future<void> deactivate(int medicineId)` — sets `active = 0` and bumps `updated_at` (deactivation, not deletion — `deleted` stays 0).
+  - `Future<void> logDose(int medicineId, DateTime scheduledTime, DoseStatus status)` — idempotent per `(medicineId, scheduledTime)`: updates the existing row's status + `updated_at` if present, else inserts with `newUuid()`.
+  - `Future<List<DoseLog>> dosesForMedicine(int medicineId)` — `deleted = 0`, newest first.
+  - `Future<DoseStatus?> statusFor(int medicineId, DateTime scheduledTime)` — `deleted = 0`; null when not acted on.
 
 - [ ] **Step 1: Write the failing test**
 
@@ -713,6 +810,7 @@ Create `test/repositories/medicine_repository_test.dart`:
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:ckd_care/db/app_database.dart';
+import 'package:ckd_care/db/ids.dart';
 import 'package:ckd_care/models/dose_log.dart';
 import 'package:ckd_care/models/medicine.dart';
 import 'package:ckd_care/repositories/medicine_repository.dart';
@@ -728,7 +826,11 @@ void main() {
   });
   tearDown(() => db.close());
 
-  Medicine med(String name) => Medicine(name: name, createdAt: DateTime(2026, 9, 2));
+  Medicine med(String name) => Medicine(
+      uuid: newUuid(),
+      name: name,
+      createdAt: DateTime(2026, 9, 2),
+      updatedAt: DateTime(2026, 9, 2));
 
   test('saveMedicine replaces times; active list excludes deactivated', () async {
     final id = await repo.saveMedicine(med('Losartan'), ['08:00', '20:00']);
@@ -736,7 +838,12 @@ void main() {
 
     // resave with different times -> replaced, not appended
     await repo.saveMedicine(
-        Medicine(id: id, name: 'Losartan', createdAt: DateTime(2026, 9, 2)),
+        Medicine(
+            id: id,
+            uuid: newUuid(),
+            name: 'Losartan',
+            createdAt: DateTime(2026, 9, 2),
+            updatedAt: DateTime(2026, 9, 2)),
         ['09:00']);
     expect((await repo.timesFor(id)).map((t) => t.timeOfDay), ['09:00']);
 
@@ -770,8 +877,8 @@ Expected: FAIL — `MedicineRepository` not found.
 Create `lib/repositories/medicine_repository.dart`:
 
 ```dart
-import 'package:sqflite/sqflite.dart';
 import 'package:ckd_care/db/app_database.dart';
+import 'package:ckd_care/db/ids.dart';
 import 'package:ckd_care/models/dose_log.dart';
 import 'package:ckd_care/models/medicine.dart';
 
@@ -781,6 +888,7 @@ class MedicineRepository {
 
   Future<int> saveMedicine(Medicine med, List<String> times) async {
     final db = await _db.database;
+    final now = DateTime.now().toIso8601String();
     return db.transaction((txn) async {
       final int id;
       if (med.id == null) {
@@ -790,9 +898,17 @@ class MedicineRepository {
         await txn.update('medicine', med.toMap(),
             where: 'id = ?', whereArgs: [id]);
       }
-      await txn.delete('medicine_time', where: 'medicine_id = ?', whereArgs: [id]);
+      // Soft-delete existing time rows (sync tombstones), then insert new ones.
+      await txn.update('medicine_time', {'deleted': 1, 'updated_at': now},
+          where: 'medicine_id = ? AND deleted = 0', whereArgs: [id]);
       for (final t in times) {
-        await txn.insert('medicine_time', {'medicine_id': id, 'time_of_day': t});
+        await txn.insert('medicine_time', {
+          'uuid': newUuid(),
+          'medicine_id': id,
+          'time_of_day': t,
+          'updated_at': now,
+          'deleted': 0,
+        });
       }
       return id;
     });
@@ -801,21 +917,26 @@ class MedicineRepository {
   Future<List<Medicine>> activeMedicines() async {
     final db = await _db.database;
     final rows = await db.query('medicine',
-        where: 'active = 1', orderBy: 'name COLLATE NOCASE ASC');
+        where: 'active = 1 AND deleted = 0', orderBy: 'name COLLATE NOCASE ASC');
     return rows.map(Medicine.fromMap).toList();
   }
 
   Future<List<MedicineTime>> timesFor(int medicineId) async {
     final db = await _db.database;
     final rows = await db.query('medicine_time',
-        where: 'medicine_id = ?', whereArgs: [medicineId], orderBy: 'time_of_day ASC');
+        where: 'medicine_id = ? AND deleted = 0',
+        whereArgs: [medicineId],
+        orderBy: 'time_of_day ASC');
     return rows.map(MedicineTime.fromMap).toList();
   }
 
   Future<void> deactivate(int medicineId) async {
     final db = await _db.database;
-    await db.update('medicine', {'active': 0},
-        where: 'id = ?', whereArgs: [medicineId]);
+    await db.update(
+        'medicine',
+        {'active': 0, 'updated_at': DateTime.now().toIso8601String()},
+        where: 'id = ?',
+        whereArgs: [medicineId]);
   }
 
   Future<void> logDose(int medicineId, DateTime scheduledTime, DoseStatus status) async {
@@ -828,13 +949,17 @@ class MedicineRepository {
         whereArgs: [medicineId, iso]);
     if (existing.isEmpty) {
       await db.insert('dose_log', {
+        'uuid': newUuid(),
         'medicine_id': medicineId,
         'scheduled_time': iso,
         'status': status.name,
         'acted_at': now,
+        'updated_at': now,
+        'deleted': 0,
       });
     } else {
-      await db.update('dose_log', {'status': status.name, 'acted_at': now},
+      await db.update('dose_log',
+          {'status': status.name, 'acted_at': now, 'updated_at': now},
           where: 'id = ?', whereArgs: [existing.first['id']]);
     }
   }
@@ -842,7 +967,7 @@ class MedicineRepository {
   Future<List<DoseLog>> dosesForMedicine(int medicineId) async {
     final db = await _db.database;
     final rows = await db.query('dose_log',
-        where: 'medicine_id = ?', whereArgs: [medicineId],
+        where: 'medicine_id = ? AND deleted = 0', whereArgs: [medicineId],
         orderBy: 'scheduled_time DESC');
     return rows.map(DoseLog.fromMap).toList();
   }
@@ -851,7 +976,7 @@ class MedicineRepository {
     final db = await _db.database;
     final rows = await db.query('dose_log',
         columns: ['status'],
-        where: 'medicine_id = ? AND scheduled_time = ?',
+        where: 'medicine_id = ? AND scheduled_time = ? AND deleted = 0',
         whereArgs: [medicineId, scheduledTime.toIso8601String()]);
     return rows.isEmpty ? null : DoseStatus.values.byName(rows.first['status'] as String);
   }
@@ -1045,10 +1170,16 @@ class _FakeSettings {
 
 class _FakeMedicine {
   final logged = <String>[];
-  Future<List<Medicine>> activeMedicines() async =>
-      [Medicine(id: 1, name: 'Losartan', createdAt: DateTime(2026, 9, 2))];
+  Future<List<Medicine>> activeMedicines() async => [
+        Medicine(
+            id: 1,
+            uuid: 'u1',
+            name: 'Losartan',
+            createdAt: DateTime(2026, 9, 2),
+            updatedAt: DateTime(2026, 9, 2))
+      ];
   Future<List<MedicineTime>> timesFor(int id) async =>
-      [const MedicineTime(timeOfDay: '08:00')];
+      [MedicineTime(uuid: 't1', timeOfDay: '08:00', updatedAt: DateTime(2026, 9, 2))];
   Future<DoseStatus?> statusFor(int id, DateTime t) async => null;
   Future<void> logDose(int id, DateTime t, DoseStatus s) async =>
       logged.add('$id|$s');
@@ -1233,6 +1364,7 @@ Create `lib/providers/fluid_provider.dart`:
 
 ```dart
 import 'package:flutter/foundation.dart';
+import 'package:ckd_care/db/ids.dart';
 import 'package:ckd_care/models/fluid_entry.dart';
 import 'package:ckd_care/repositories/fluid_repository.dart';
 
@@ -1252,11 +1384,13 @@ class FluidProvider extends ChangeNotifier {
   Future<void> add(FluidType type, int ml, {String? note}) async {
     final now = DateTime.now();
     await _repo.add(FluidEntry(
+      uuid: newUuid(),
       type: type,
       amountMl: ml,
       loggedAt: now,
       day: FluidEntry.dayOf(now),
       note: note,
+      updatedAt: now,
     ));
     await loadDay(day);
   }
@@ -1605,6 +1739,7 @@ Create `lib/screens/medicine_detail_screen.dart`:
 ```dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:ckd_care/db/ids.dart';
 import 'package:ckd_care/models/medicine.dart';
 import 'package:ckd_care/providers/medicine_provider.dart';
 
@@ -1635,9 +1770,11 @@ class _MedicineDetailScreenState extends State<MedicineDetailScreen> {
     if (_name.text.trim().isEmpty || _times.isEmpty) return;
     final med = Medicine(
       id: widget.medicine?.id,
+      uuid: widget.medicine?.uuid ?? newUuid(),
       name: _name.text.trim(),
       dosage: _dosage.text.trim().isEmpty ? null : _dosage.text.trim(),
       createdAt: widget.medicine?.createdAt ?? DateTime.now(),
+      updatedAt: DateTime.now(),
     );
     await context.read<MedicineProvider>().save(med, _times..sort());
     if (mounted) Navigator.pop(context);
@@ -1917,10 +2054,16 @@ class _FakeSettings {
 }
 
 class _FakeMedicine {
-  Future<List<Medicine>> activeMedicines() async =>
-      [Medicine(id: 1, name: 'Losartan', createdAt: DateTime(2026, 9, 2))];
+  Future<List<Medicine>> activeMedicines() async => [
+        Medicine(
+            id: 1,
+            uuid: 'u1',
+            name: 'Losartan',
+            createdAt: DateTime(2026, 9, 2),
+            updatedAt: DateTime(2026, 9, 2))
+      ];
   Future<List<MedicineTime>> timesFor(int id) async =>
-      [const MedicineTime(timeOfDay: '08:00')];
+      [MedicineTime(uuid: 't1', timeOfDay: '08:00', updatedAt: DateTime(2026, 9, 2))];
   Future<dynamic> statusFor(int id, DateTime t) async => null;
 }
 
@@ -1999,9 +2142,10 @@ Run after Task 9 on a real device or emulator (`flutter run`). Notifications can
 - Settings (limit, notifications flag) → Task 4, SettingsProvider/Screen. ✓
 - Edge cases (limit unset, permission denied, dose acted twice) → FluidGauge null-limit branch, dashboard is source of truth, Task 5 idempotency. ✓
 - Testing plan (unit rollups/idempotency/migration, provider aggregation, notification IDs, smoke) → Tasks 1,3,4,5,6,7,9. ✓
+- Sync-readiness (uuid + updated_at + deleted on all data tables; soft-delete everywhere; repository seam) → Task 1 schema, Task 2 models, Tasks 3 & 5 repositories (soft-delete + `deleted = 0` filters + uuid generation via `newUuid()`). ✓
 
 **Placeholder scan:** No TBD/TODO; all code blocks complete; the `onUpgrade` empty body is an intentional v1 no-op (documented), not a placeholder.
 
 **Type consistency:** `DailyFluidTotals`, `FluidEntry.dayOf`, `DueDose`, `NotificationService.notificationId`, `saveMedicine(Medicine, List<String>)`, `logDose(int, DateTime, DoseStatus)`, `statusFor` signatures match across producing and consuming tasks. Provider constructor uses `dynamic`-typed named params, so the same fakes work in provider tests, the widget smoke test, and real repos in `main.dart`.
 
-**Deferred (Group B/C, not gaps):** lab results, medicine stock, dialysis schedule, food lists — future specs/migrations, per the design.
+**Deferred (not gaps):** Group B (lab results, medicine stock, dialysis schedule), Group C (food lists), and Group D (Supabase online sync — client/auth/SyncService/conflict policy) are future specs + migrations. Group A ships the sync *schema hooks* only, no sync code.

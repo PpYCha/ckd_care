@@ -17,8 +17,11 @@ to later specs:
 - **Group B** (records): lab results (creatinine, potassium, etc.), medicine
   stock, dialysis center schedule.
 - **Group C** (static content): good / bad foods for CKD5.
+- **Group D** (online sync): Supabase-backed sync with offline-first behavior.
+  See "Sync-readiness" below — Group A ships the schema hooks for this, but
+  builds no sync code.
 
-The data model and migration system are designed so B and C slot in as
+The data model and migration system are designed so B, C, and D slot in as
 numbered migrations, not rewrites.
 
 ## Users
@@ -34,10 +37,12 @@ app makes no distinction between them.
 - **State management:** `provider` (lightest mainstream option, official, minimal boilerplate)
 - **Storage:** `sqflite` + `path` (local SQLite)
 - **Notifications:** `flutter_local_notifications` (local scheduled reminders)
+- **IDs:** `uuid` (client-generated v4, for sync-stable row identity)
 - **Testing:** `sqflite_common_ffi` for in-memory DB in unit tests
 
-Rejected: riverpod / bloc (more ceremony than this scope needs); any cloud/sync
-(single local device by decision).
+Rejected for now: riverpod / bloc (more ceremony than this scope needs).
+Supabase sync is a **deferred phase (Group D)**, not part of Group A — the
+offline app is the foundation, sync is an additive layer (see below).
 
 ## Architecture
 
@@ -64,46 +69,65 @@ the DB is swappable.
 
 Dates stored as ISO-8601 text (sortable). Indexes on the columns filtered daily.
 
+Every **data** table carries three sync-metadata columns from v1 (see
+"Sync-readiness"): `uuid` (client-generated v4, the sync-stable identity),
+`updated_at` (last-modified, for last-write-wins), `deleted` (soft-delete
+tombstone). The local `INTEGER id` stays the in-app primary key; `uuid` is the
+cross-device identity.
+
 ```sql
 -- Fluid entries: intake and output share one table, discriminated by `type`.
 fluid_entry(
   id INTEGER PRIMARY KEY,
+  uuid TEXT NOT NULL UNIQUE,   -- client-generated v4, sync-stable identity
   type TEXT NOT NULL,          -- 'intake' | 'output'
   amount_ml INTEGER NOT NULL,
   logged_at TEXT NOT NULL,     -- full ISO timestamp
   day TEXT NOT NULL,           -- 'YYYY-MM-DD', derived, for fast daily rollups
-  note TEXT
+  note TEXT,
+  updated_at TEXT NOT NULL,    -- last-modified, for sync conflict resolution
+  deleted INTEGER NOT NULL DEFAULT 0   -- soft-delete tombstone
 );
 CREATE INDEX idx_fluid_day ON fluid_entry(day, type);
 
 medicine(
   id INTEGER PRIMARY KEY,
+  uuid TEXT NOT NULL UNIQUE,
   name TEXT NOT NULL,
   dosage TEXT,                 -- free text, e.g. '50 mg'
-  active INTEGER NOT NULL DEFAULT 1,   -- soft-delete; keeps dose history intact
-  created_at TEXT NOT NULL
+  active INTEGER NOT NULL DEFAULT 1,   -- deactivated but kept for dose history
+  created_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  deleted INTEGER NOT NULL DEFAULT 0
 );
 
 -- One row per scheduled clock time (fixed daily in v1).
 -- Flexible patterns (every-other-day, weekdays, intervals) extend this table later.
 medicine_time(
   id INTEGER PRIMARY KEY,
+  uuid TEXT NOT NULL UNIQUE,
   medicine_id INTEGER NOT NULL REFERENCES medicine(id),
-  time_of_day TEXT NOT NULL    -- 'HH:mm'
+  time_of_day TEXT NOT NULL,   -- 'HH:mm'
+  updated_at TEXT NOT NULL,
+  deleted INTEGER NOT NULL DEFAULT 0
 );
 CREATE INDEX idx_time_med ON medicine_time(medicine_id);
 
 -- Adherence log: one row per dose the user acts on.
 dose_log(
   id INTEGER PRIMARY KEY,
+  uuid TEXT NOT NULL UNIQUE,
   medicine_id INTEGER NOT NULL REFERENCES medicine(id),
   scheduled_time TEXT NOT NULL, -- ISO timestamp the dose was due
   status TEXT NOT NULL,         -- 'taken' | 'skipped'
-  acted_at TEXT NOT NULL
+  acted_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL,
+  deleted INTEGER NOT NULL DEFAULT 0
 );
 CREATE INDEX idx_dose_med_time ON dose_log(medicine_id, scheduled_time);
 
 -- Single-row-per-key settings; daily fluid limit lives here.
+-- Device-local config, NOT synced — no sync columns.
 setting(key TEXT PRIMARY KEY, value TEXT NOT NULL);
 ```
 
@@ -119,9 +143,38 @@ setting(key TEXT PRIMARY KEY, value TEXT NOT NULL);
   pattern columns here, without reshaping dose-log or reminder logic.
 - Repository methods return typed models, never raw maps.
 
-**Deliberately NOT added:** sync tables, audit columns, an ORM, a generic
-events table. No second user, no server. The migration system is the real
-scalability lever, and it is in place.
+**Deliberately NOT added:** an ORM, a generic events table, a `SyncService`, or
+a Supabase client. The migration system + the sync-metadata columns are the
+scalability levers, and they are in place. Sync itself is Group D.
+
+## Sync-readiness (foundation for Group D, no sync code in Group A)
+
+The requirement: later add **Supabase online sync with offline-first behavior**,
+and keep the database swappable. Group A lays the cheap-to-add-now / expensive-
+to-backfill-later foundation, and builds nothing else:
+
+- **Repository layer is the swap/sync seam.** UI and providers never touch
+  `sqflite`; they call repositories that return typed models. Swapping the
+  storage engine, or adding a remote data source *behind* the repositories,
+  changes nothing above them. No abstract repository interface yet — there is
+  one implementation; extracting an interface when the second arrives is a
+  mechanical refactor (YAGNI until then).
+- **`uuid` on every data row.** Local `INTEGER` PKs collide when two devices
+  merge; a client-generated v4 `uuid` gives each row a stable cross-device
+  identity. Generated at insert time, immutable thereafter.
+- **`updated_at` on every data row.** Bumped on every write. Enables
+  last-write-wins conflict resolution and "changed since last sync" queries
+  without a separate audit log.
+- **`deleted` tombstone on every data row.** A hard-deleted row can't be
+  propagated as a deletion to the server/other devices. All deletes are soft;
+  reads filter `deleted = 0`.
+
+**Deferred to Group D (its own spec, after Group A works fully offline):**
+Supabase client + auth, a `SyncService` (push local dirty rows, pull remote
+changes since a cursor), a `last_synced_at` marker, connectivity/retry handling,
+and the conflict policy (default: last-write-wins by `updated_at`). Offline-first
+is guaranteed because Group A *is* the fully-functional offline app; sync is a
+purely additive background layer.
 
 ## Features & screens (Group A)
 
