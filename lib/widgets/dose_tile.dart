@@ -16,19 +16,20 @@ class DoseTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final text = Theme.of(context).textTheme;
+    final cs = Theme.of(context).colorScheme;
     final (statusLabel, statusColor, icon) = switch (dose.status) {
       DoseStatus.taken => ('Taken', AppColors.good, Icons.check_rounded),
       DoseStatus.skipped => ('Skipped', AppColors.over, Icons.close_rounded),
-      null => ('Pending', AppColors.inkSoft, Icons.medication_outlined),
+      null => ('Pending', cs.onSurfaceVariant, Icons.medication_outlined),
     };
 
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: cs.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.line),
+        border: Border.all(color: cs.outlineVariant),
       ),
       child: Row(children: [
         Container(
@@ -70,10 +71,12 @@ class _DoseToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Opacity(
       opacity: enabled ? 1 : 0.4,
       child: Row(mainAxisSize: MainAxisSize.min, children: [
         _pill(
+          cs: cs,
           icon: Icons.check_rounded,
           label: 'Taken',
           color: AppColors.good,
@@ -82,6 +85,7 @@ class _DoseToggle extends StatelessWidget {
         ),
         const SizedBox(width: 6),
         _pill(
+          cs: cs,
           icon: Icons.close_rounded,
           label: 'Skip',
           color: AppColors.over,
@@ -93,6 +97,7 @@ class _DoseToggle extends StatelessWidget {
   }
 
   Widget _pill({
+    required ColorScheme cs,
     required IconData icon,
     required String label,
     required Color color,
@@ -110,18 +115,18 @@ class _DoseToggle extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(11),
             border: Border.all(
-                color: selected ? color : AppColors.line,
+                color: selected ? color : cs.outlineVariant,
                 width: selected ? 1.4 : 1),
           ),
           child: Row(mainAxisSize: MainAxisSize.min, children: [
-            Icon(icon, size: 16, color: selected ? color : AppColors.inkSoft),
+            Icon(icon, size: 16, color: selected ? color : cs.onSurfaceVariant),
             const SizedBox(width: 4),
             Text(label,
                 style: TextStyle(
                     fontFamily: 'Nunito',
                     fontSize: 13,
                     fontWeight: FontWeight.w700,
-                    color: selected ? color : AppColors.inkSoft)),
+                    color: selected ? color : cs.onSurfaceVariant)),
           ]),
         ),
       ),

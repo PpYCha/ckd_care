@@ -103,7 +103,9 @@ class _Meter extends StatelessWidget {
     return ClipRRect(
       borderRadius: BorderRadius.circular(14),
       child: Stack(children: [
-        Container(height: 26, color: AppColors.surfaceAlt),
+        Container(
+            height: 26,
+            color: Theme.of(context).colorScheme.surfaceContainerHighest),
         FractionallySizedBox(
           widthFactor: ratio.clamp(0.0, 1.0),
           child: Container(

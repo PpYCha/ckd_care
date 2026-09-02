@@ -64,12 +64,13 @@ class _MedicinesScreenState extends State<MedicinesScreen> {
   }
 
   Widget _card(Medicine m, List<String> times) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: cs.surface,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.line),
+        border: Border.all(color: cs.outlineVariant),
       ),
       child: ListTile(
         contentPadding: const EdgeInsets.fromLTRB(14, 8, 14, 8),
@@ -78,10 +79,9 @@ class _MedicinesScreenState extends State<MedicinesScreen> {
         leading: Container(
           width: 44,
           height: 44,
-          decoration: const BoxDecoration(
-              color: AppColors.primaryContainer, shape: BoxShape.circle),
-          child: const Icon(Icons.medication_rounded,
-              color: AppColors.primary, size: 24),
+          decoration: BoxDecoration(
+              color: cs.primaryContainer, shape: BoxShape.circle),
+          child: Icon(Icons.medication_rounded, color: cs.primary, size: 24),
         ),
         title: Text(m.name, style: Theme.of(context).textTheme.titleMedium),
         subtitle: Padding(
@@ -106,8 +106,9 @@ class _MedicinesScreenState extends State<MedicinesScreen> {
       body: p.medicines.isEmpty
           ? Center(
               child: Column(mainAxisSize: MainAxisSize.min, children: [
-                const Icon(Icons.medication_outlined,
-                    size: 46, color: AppColors.inkSoft),
+                Icon(Icons.medication_outlined,
+                    size: 46,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant),
                 const SizedBox(height: 10),
                 Text('No medicines yet',
                     style: Theme.of(context).textTheme.titleMedium),

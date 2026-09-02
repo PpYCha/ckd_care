@@ -104,7 +104,9 @@ class CkdApp extends StatelessWidget {
       child: MaterialApp(
         title: 'CKD Care',
         debugShowCheckedModeBanner: false,
-        theme: buildAppTheme(),
+        theme: buildAppTheme(Brightness.light),
+        darkTheme: buildAppTheme(Brightness.dark),
+        themeMode: ThemeMode.system,
         home: const HomeShell(),
       ),
     );

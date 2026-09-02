@@ -85,16 +85,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
           .toList();
 
   Widget _dateBar(DashboardProvider d) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: cs.surface,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.line),
+        border: Border.all(color: cs.outlineVariant),
       ),
       child: Row(children: [
         IconButton(
-            icon: const Icon(Icons.chevron_left, color: AppColors.inkSoft),
+            icon: Icon(Icons.chevron_left, color: cs.onSurfaceVariant),
             onPressed: () => context.read<DashboardProvider>().previousDay()),
         Expanded(
           child: TextButton.icon(
@@ -108,7 +109,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
         ),
         IconButton(
-            icon: const Icon(Icons.chevron_right, color: AppColors.inkSoft),
+            icon: Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
             onPressed: () => context.read<DashboardProvider>().nextDay()),
       ]),
     );
@@ -116,6 +117,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _fluidStats(DashboardProvider d) {
     final t = d.fluidTotals;
+    final cs = Theme.of(context).colorScheme;
     Widget stat(String label, int value, Color color) => Expanded(
           child: Column(children: [
             Text('$value',
@@ -134,9 +136,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
           Row(children: [
             stat('Intake mL', t?.intakeMl ?? 0, AppColors.water),
             _vRule(),
-            stat('Output mL', t?.outputMl ?? 0, AppColors.inkSoft),
+            stat('Output mL', t?.outputMl ?? 0, cs.onSurfaceVariant),
             _vRule(),
-            stat('Net mL', t?.netMl ?? 0, AppColors.primary),
+            stat('Net mL', t?.netMl ?? 0, cs.primary),
           ]),
           if (d.isToday) ...[
             const SizedBox(height: 14),
@@ -164,7 +166,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _vRule() => Container(
-      width: 1, height: 34, color: AppColors.line,
+      width: 1,
+      height: 34,
+      color: Theme.of(context).colorScheme.outlineVariant,
       margin: const EdgeInsets.symmetric(horizontal: 8));
 
   Widget _section(String title, IconData icon, List<DueDose> doses,
@@ -176,7 +180,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         Padding(
           padding: const EdgeInsets.only(top: 14, bottom: 8),
           child: Row(children: [
-            Icon(icon, size: 18, color: AppColors.primary),
+            Icon(icon, size: 18, color: Theme.of(context).colorScheme.primary),
             const SizedBox(width: 8),
             Text(title.toUpperCase(),
                 style: Theme.of(context).textTheme.titleSmall),
@@ -219,8 +223,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
             padding: const EdgeInsets.only(top: 24),
             child: Center(
               child: Column(children: [
-                const Icon(Icons.medication_outlined,
-                    size: 40, color: AppColors.inkSoft),
+                Icon(Icons.medication_outlined,
+                    size: 40,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant),
                 const SizedBox(height: 8),
                 Text('No medicines scheduled',
                     style: Theme.of(context).textTheme.bodyMedium),

@@ -49,6 +49,7 @@ class _FluidScreenState extends State<FluidScreen> {
   }
 
   Widget _summary(FluidProvider p) {
+    final cs = Theme.of(context).colorScheme;
     var intake = 0, output = 0;
     for (final e in p.entries) {
       if (e.type == FluidType.intake) {
@@ -73,16 +74,17 @@ class _FluidScreenState extends State<FluidScreen> {
         padding: const EdgeInsets.symmetric(vertical: 16),
         child: Row(children: [
           half('Intake today', intake, AppColors.water),
-          Container(width: 1, height: 36, color: AppColors.line),
-          half('Output today', output, AppColors.primary),
+          Container(width: 1, height: 36, color: cs.outlineVariant),
+          half('Output today', output, cs.primary),
         ]),
       ),
     );
   }
 
   Widget _row(FluidEntry e) {
+    final cs = Theme.of(context).colorScheme;
     final isIntake = e.type == FluidType.intake;
-    final color = isIntake ? AppColors.water : AppColors.primary;
+    final color = isIntake ? AppColors.water : cs.primary;
     final time = '${e.loggedAt.hour.toString().padLeft(2, '0')}:'
         '${e.loggedAt.minute.toString().padLeft(2, '0')}';
     return Dismissible(
@@ -99,9 +101,9 @@ class _FluidScreenState extends State<FluidScreen> {
       child: Container(
         margin: const EdgeInsets.only(bottom: 8),
         decoration: BoxDecoration(
-          color: AppColors.surface,
+          color: cs.surface,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: AppColors.line),
+          border: Border.all(color: cs.outlineVariant),
         ),
         child: ListTile(
           onTap: () => _edit(e),
@@ -121,8 +123,8 @@ class _FluidScreenState extends State<FluidScreen> {
               style: Theme.of(context).textTheme.titleMedium),
           subtitle: Text('${isIntake ? 'Intake' : 'Output'}  ·  $time',
               style: Theme.of(context).textTheme.labelMedium),
-          trailing:
-              const Icon(Icons.edit_outlined, color: AppColors.inkSoft, size: 20),
+          trailing: Icon(Icons.edit_outlined,
+              color: cs.onSurfaceVariant, size: 20),
         ),
       ),
     );
@@ -143,8 +145,9 @@ class _FluidScreenState extends State<FluidScreen> {
               padding: const EdgeInsets.only(top: 48),
               child: Center(
                 child: Column(children: [
-                  const Icon(Icons.local_drink_outlined,
-                      size: 44, color: AppColors.inkSoft),
+                  Icon(Icons.local_drink_outlined,
+                      size: 44,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant),
                   const SizedBox(height: 10),
                   Text('No fluid logged today',
                       style: Theme.of(context).textTheme.titleMedium),
