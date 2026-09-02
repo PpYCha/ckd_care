@@ -23,7 +23,12 @@ void main() {
     expect(isHighRiskFood(food(['High potassium'])), isTrue);
     expect(isHighRiskFood(food(['Phosphorus additives'])), isTrue);
     expect(isHighRiskFood(food(['Very high potassium'])), isTrue);
+    // Bare sensitive-nutrient concerns (no "high") also flag.
+    expect(isHighRiskFood(food(['Phosphorus'])), isTrue);
+    expect(isHighRiskFood(food(['Phosphorus', 'Potassium'])), isTrue);
+    // "Low" concerns and non-nutrient notes do not.
     expect(isHighRiskFood(food(['Low potassium'])), isFalse);
+    expect(isHighRiskFood(food(['Low phosphorus'])), isFalse);
     expect(isHighRiskFood(food(['Counts toward your fluid limit'])), isFalse);
   });
 }

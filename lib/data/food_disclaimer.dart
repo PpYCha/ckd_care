@@ -43,10 +43,16 @@ const String kFoodHighRiskNotice =
 bool foodDisclaimerNeeded(String? storedVersion) =>
     storedVersion != kFoodDisclaimerVersion;
 
-/// A food warrants the extra high-risk notice when it carries a "high" or
-/// "additive" nutrient concern (clinically sensitive in advanced CKD/dialysis).
-/// Stage/profile-based triggers are added in a later sub-plan.
+/// A food warrants the extra high-risk notice when it carries a concern about a
+/// clinically sensitive nutrient (potassium, phosphorus, sodium) or an additive,
+/// unless the concern is explicitly a "low" one. Keying off the food's own
+/// properties is interim — stage/profile-based triggers come in a later sub-plan.
 bool isHighRiskFood(Food food) => food.concerns.any((c) {
       final l = c.toLowerCase();
-      return l.contains('high') || l.contains('additive');
+      if (l.contains('low')) return false;
+      return l.contains('potassium') ||
+          l.contains('phosphorus') ||
+          l.contains('phosphate') ||
+          l.contains('sodium') ||
+          l.contains('additive');
     });
