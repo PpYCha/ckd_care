@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:ckd_care/models/medicine.dart';
 import 'package:ckd_care/providers/medicine_provider.dart';
 import 'package:ckd_care/screens/medicine_detail_screen.dart';
 
@@ -25,7 +26,16 @@ class _MedicinesScreenState extends State<MedicinesScreen> {
         for (final m in p.medicines)
           ListTile(
             title: Text(m.name),
-            subtitle: Text(m.dosage ?? ''),
+            subtitle: Text([
+              if ((m.dosage ?? '').isNotEmpty) m.dosage!,
+              if ((p.timesByMedicine[m.id] ?? []).isNotEmpty)
+                (p.timesByMedicine[m.id] ?? []).join(', '),
+              'Stock: ${m.stockQty}',
+              if (m.endDate != null) 'Until ${Medicine.fmtDate(m.endDate!)}',
+            ].join('  •  ')),
+            trailing: m.stockQty == 0
+                ? const Chip(label: Text('Out of stock'))
+                : null,
             onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(
