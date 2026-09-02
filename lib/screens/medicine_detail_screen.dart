@@ -16,8 +16,6 @@ class _MedicineDetailScreenState extends State<MedicineDetailScreen> {
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _name =
       TextEditingController(text: widget.medicine?.name ?? '');
-  late final TextEditingController _dosage =
-      TextEditingController(text: widget.medicine?.dosage ?? '');
   late final TextEditingController _stock = TextEditingController(
       text: widget.medicine?.stockQty.toString() ?? '');
   final List<String> _times = [];
@@ -75,7 +73,8 @@ class _MedicineDetailScreenState extends State<MedicineDetailScreen> {
       id: widget.medicine?.id,
       uuid: widget.medicine?.uuid ?? newUuid(),
       name: _name.text.trim(),
-      dosage: _dosage.text.trim().isEmpty ? null : _dosage.text.trim(),
+      // Dosage = number of doses per day = number of reminder times.
+      dosage: _times.length.toString(),
       stockQty: int.parse(_stock.text.trim()),
       endDate: _endDate,
       createdAt: widget.medicine?.createdAt ?? DateTime.now(),
@@ -135,10 +134,6 @@ class _MedicineDetailScreenState extends State<MedicineDetailScreen> {
                 labelText: 'Name *', hintText: 'Required'),
             validator: (v) =>
                 (v == null || v.trim().isEmpty) ? 'Name is required' : null,
-          ),
-          TextFormField(
-            controller: _dosage,
-            decoration: const InputDecoration(labelText: 'Dosage'),
           ),
           TextFormField(
             controller: _stock,
