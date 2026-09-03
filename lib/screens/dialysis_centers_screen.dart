@@ -24,10 +24,12 @@ class _DialysisCentersScreenState extends State<DialysisCentersScreen> {
     _repo.load().then((_) {
       if (mounted) setState(() => _loading = false);
     }).catchError((_) {
-      if (mounted) setState(() {
-        _loading = false;
-        _loadFailed = true;
-      });
+      if (mounted) {
+        setState(() {
+          _loading = false;
+          _loadFailed = true;
+        });
+      }
     });
   }
 
