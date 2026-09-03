@@ -46,12 +46,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 
   String _profileSummary(HealthProfile p) {
-    if (!p.isSet && p.dialysisStatus == DialysisStatus.none) return 'Not set';
+    if (p == const HealthProfile()) return 'Not set';
     final parts = <String>[
       if (p.ckdStage != null) p.ckdStage!.label,
       if (p.dialysisStatus != DialysisStatus.none) p.dialysisStatus.label,
     ];
-    return parts.isEmpty ? 'Not set' : parts.join(' · ');
+    // A profile with only flags set (no stage/dialysis) is still saved.
+    return parts.isEmpty ? 'Details saved' : parts.join(' · ');
   }
 
   @override
