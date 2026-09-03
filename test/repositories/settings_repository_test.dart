@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:ckd_care/db/app_database.dart';
 import 'package:ckd_care/repositories/settings_repository.dart';
+import 'package:ckd_care/models/health_profile.dart';
 
 void main() {
   sqfliteFfiInit();
@@ -32,5 +33,19 @@ void main() {
     expect(await repo.getFoodDisclaimerAckVersion(), isNull);
     await repo.setFoodDisclaimerAck('1.0');
     expect(await repo.getFoodDisclaimerAckVersion(), '1.0');
+  });
+
+  test('health profile round-trips; defaults when unset', () async {
+    final empty = await repo.getHealthProfile();
+    expect(empty, const HealthProfile()); // unset stage, none, all false
+
+    const p = HealthProfile(
+      ckdStage: CkdStage.stage4,
+      dialysisStatus: DialysisStatus.hemodialysis,
+      diabetes: true,
+      elevatedPotassium: true,
+    );
+    await repo.saveHealthProfile(p);
+    expect(await repo.getHealthProfile(), p);
   });
 }
