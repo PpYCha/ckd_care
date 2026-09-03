@@ -1,8 +1,10 @@
 // lib/screens/dialysis_schedule_edit_screen.dart
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:ckd_care/models/dialysis_center.dart';
 import 'package:ckd_care/models/dialysis_schedule.dart';
 import 'package:ckd_care/providers/dialysis_schedule_provider.dart';
+import 'package:ckd_care/screens/dialysis_center_picker_screen.dart';
 import 'package:ckd_care/theme/app_theme.dart';
 
 class DialysisScheduleEditScreen extends StatefulWidget {
@@ -43,6 +45,18 @@ class _DialysisScheduleEditScreenState
   Future<void> _pickTime() async {
     final t = await showTimePicker(context: context, initialTime: _time);
     if (t != null) setState(() => _time = t);
+  }
+
+  Future<void> _pickCenter() async {
+    final center = await Navigator.push<DialysisCenter>(
+      context,
+      MaterialPageRoute(builder: (_) => const DialysisCenterPickerScreen()),
+    );
+    if (center == null || !mounted) return;
+    setState(() {
+      _clinic.text = center.name;
+      _address.text = center.address;
+    });
   }
 
   Future<void> _save() async {
@@ -111,6 +125,14 @@ class _DialysisScheduleEditScreenState
           onChanged: (v) => setState(() => _duration = v ?? _duration),
         ),
         const SizedBox(height: 20),
+        Text('CLINIC', style: text.titleSmall),
+        const SizedBox(height: 8),
+        OutlinedButton.icon(
+          icon: const Icon(Icons.search_rounded),
+          label: const Text('Choose from accredited centers'),
+          onPressed: _pickCenter,
+        ),
+        const SizedBox(height: 12),
         TextField(
           controller: _clinic,
           decoration: const InputDecoration(
