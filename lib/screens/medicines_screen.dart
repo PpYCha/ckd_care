@@ -89,6 +89,7 @@ class _MedicinesScreenState extends State<MedicinesScreen> {
           child: Text(
             [
               if (times.isNotEmpty) '${times.length}× daily · ${times.join(', ')}',
+              m.consumeUntilEmpty ? 'To be consumed' : 'Maintenance',
               if (m.endDate != null) 'Until ${Medicine.fmtDate(m.endDate!)}',
             ].join('  ·  '),
             style: Theme.of(context).textTheme.labelMedium,

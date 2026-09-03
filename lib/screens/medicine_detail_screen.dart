@@ -21,6 +21,7 @@ class _MedicineDetailScreenState extends State<MedicineDetailScreen> {
   final List<String> _times = [];
   DateTime? _endDate;
   bool _timesError = false;
+  late bool _consumeUntilEmpty = widget.medicine?.consumeUntilEmpty ?? false;
 
   @override
   void initState() {
@@ -77,6 +78,7 @@ class _MedicineDetailScreenState extends State<MedicineDetailScreen> {
       dosage: _times.length.toString(),
       stockQty: int.parse(_stock.text.trim()),
       endDate: _endDate,
+      consumeUntilEmpty: _consumeUntilEmpty,
       createdAt: widget.medicine?.createdAt ?? DateTime.now(),
       updatedAt: DateTime.now(),
     );
@@ -148,7 +150,17 @@ class _MedicineDetailScreenState extends State<MedicineDetailScreen> {
               return null;
             },
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 8),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            value: _consumeUntilEmpty,
+            onChanged: (v) => setState(() => _consumeUntilEmpty = v),
+            title: const Text('To be consumed'),
+            subtitle: Text(_consumeUntilEmpty
+                ? 'A finite course — done once the stock runs out.'
+                : 'Indefinite maintenance medicine.'),
+          ),
+          const SizedBox(height: 8),
           Row(children: [
             Expanded(
               child: Text(_endDate == null

@@ -908,8 +908,15 @@ const List<Food> kFoods = [
 ];
 
 /// All foods when [status] is null, otherwise only those with that status.
-List<Food> filterFoods(List<Food> all, FoodStatus? status) =>
-    status == null ? all : all.where((f) => f.status == status).toList();
+List<Food> filterFoods(List<Food> all, FoodStatus? status, {String query = ''}) {
+  final q = query.trim().toLowerCase();
+  return all.where((f) {
+    if (status != null && f.status != status) return false;
+    if (q.isEmpty) return true;
+    return f.name.toLowerCase().contains(q) ||
+        f.concerns.any((c) => c.toLowerCase().contains(q));
+  }).toList();
+}
 
 /// Groups foods by category in enum order, omitting empty categories.
 Map<FoodCategory, List<Food>> groupByCategory(List<Food> foods) {

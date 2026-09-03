@@ -11,11 +11,11 @@ void main() {
   AppDatabase newDb() =>
       AppDatabase(databaseFactoryFfi, path: inMemoryDatabasePath);
 
-  test('opens at schema v1 with all tables and indexes', () async {
+  test('opens at current schema with all tables and indexes', () async {
     final db = newDb();
     final database = await db.database;
 
-    expect(await database.getVersion(), 2);
+    expect(await database.getVersion(), 3);
 
     final tables = (await database.query('sqlite_master',
             columns: ['name'], where: "type = 'table'"))
@@ -34,14 +34,15 @@ void main() {
     await db.close();
   });
 
-  test('schema is version 2 with stock_qty and end_date on medicine', () async {
+  test('schema is current with stock_qty, end_date, consume_until_empty on medicine',
+      () async {
     final db = AppDatabase(databaseFactoryFfi, path: inMemoryDatabasePath);
     final database = await db.database;
-    expect(await database.getVersion(), 2);
+    expect(await database.getVersion(), 3);
     final cols = (await database.rawQuery('PRAGMA table_info(medicine)'))
         .map((r) => r['name'])
         .toSet();
-    expect(cols, containsAll(['stock_qty', 'end_date']));
+    expect(cols, containsAll(['stock_qty', 'end_date', 'consume_until_empty']));
     await db.close();
   });
 

@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 class AppDatabase {
   AppDatabase(this._factory, {this.path = 'ckd_care.db'});
 
-  static const int schemaVersion = 2;
+  static const int schemaVersion = 3;
 
   final DatabaseFactory _factory;
   final String path;
@@ -27,6 +27,10 @@ class AppDatabase {
             await db.execute(
                 'ALTER TABLE medicine ADD COLUMN stock_qty INTEGER NOT NULL DEFAULT 0');
             await db.execute('ALTER TABLE medicine ADD COLUMN end_date TEXT');
+          }
+          if (oldVersion < 3) {
+            await db.execute(
+                'ALTER TABLE medicine ADD COLUMN consume_until_empty INTEGER NOT NULL DEFAULT 0');
           }
         },
       ),
@@ -63,7 +67,8 @@ class AppDatabase {
       updated_at TEXT NOT NULL,
       deleted INTEGER NOT NULL DEFAULT 0,
       stock_qty INTEGER NOT NULL DEFAULT 0,
-      end_date TEXT
+      end_date TEXT,
+      consume_until_empty INTEGER NOT NULL DEFAULT 0
     )''',
     '''
     CREATE TABLE medicine_time(

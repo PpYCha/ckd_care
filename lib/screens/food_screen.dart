@@ -16,12 +16,14 @@ class FoodScreen extends StatefulWidget {
 
 class _FoodScreenState extends State<FoodScreen> {
   FoodStatus? _filter; // null = All
+  String _query = '';
 
   @override
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final text = Theme.of(context).textTheme;
-    final grouped = groupByCategory(filterFoods(kFoods, _filter));
+    final grouped =
+        groupByCategory(filterFoods(kFoods, _filter, query: _query));
     final band = stageBandForProfile(
         context.watch<HealthProfileProvider>().profile);
 
@@ -107,6 +109,24 @@ class _FoodScreenState extends State<FoodScreen> {
               Icon(Icons.chevron_right, size: 18, color: cs.onSurfaceVariant),
             ]),
           ),
+        const SizedBox(height: 12),
+        TextField(
+          onChanged: (v) => setState(() => _query = v),
+          textInputAction: TextInputAction.search,
+          decoration: InputDecoration(
+            hintText: 'Search food',
+            prefixIcon: const Icon(Icons.search),
+            suffixIcon: _query.isEmpty
+                ? null
+                : IconButton(
+                    icon: const Icon(Icons.clear),
+                    onPressed: () => setState(() => _query = ''),
+                  ),
+            isDense: true,
+            border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14)),
+          ),
+        ),
         const SizedBox(height: 12),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,

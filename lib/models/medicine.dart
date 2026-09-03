@@ -7,6 +7,7 @@ class Medicine {
     this.active = true,
     required this.stockQty,
     this.endDate,
+    this.consumeUntilEmpty = false,
     required this.createdAt,
     required this.updatedAt,
     this.deleted = false,
@@ -19,6 +20,11 @@ class Medicine {
   final bool active;
   final int stockQty;
   final DateTime? endDate;
+
+  /// true = a finite course taken until stock runs out; false = indefinite
+  /// maintenance med. Purely classification — the dashboard already hides any
+  /// medicine at 0 stock.
+  final bool consumeUntilEmpty;
   final DateTime createdAt;
   final DateTime updatedAt;
   final bool deleted;
@@ -39,6 +45,7 @@ class Medicine {
         endDate: m['end_date'] == null
             ? null
             : DateTime.parse(m['end_date'] as String),
+        consumeUntilEmpty: (m['consume_until_empty'] as int? ?? 0) == 1,
         createdAt: DateTime.parse(m['created_at'] as String),
         updatedAt: DateTime.parse(m['updated_at'] as String),
         deleted: (m['deleted'] as int) == 1,
@@ -52,6 +59,7 @@ class Medicine {
         'active': active ? 1 : 0,
         'stock_qty': stockQty,
         'end_date': endDate == null ? null : fmtDate(endDate!),
+        'consume_until_empty': consumeUntilEmpty ? 1 : 0,
         'created_at': createdAt.toIso8601String(),
         'updated_at': updatedAt.toIso8601String(),
         'deleted': deleted ? 1 : 0,
