@@ -54,18 +54,23 @@ String stageAdvice(Food food, StageBand band) {
           : 'Watch ${_join(flags)} and portion size — check against your recent '
               'lab results.';
     case StageBand.stage4:
-    case StageBand.stage5:
       return flags.isEmpty
           ? 'Often suitable, but keep portions moderate. Confirm with your recent '
               'lab results and dietitian.'
           : 'May need limiting if your ${_join(flags)} ${flags.length == 1 ? 'is' : 'are'} '
               'elevated — your lab results and dietitian decide.';
+    case StageBand.stage5:
+      return flags.isEmpty
+          ? 'Keep portions moderate and get your renal dietitian\'s guidance — '
+              'needs are highly individual at this stage.'
+          : 'Likely needs limiting if your ${_join(flags)} ${flags.length == 1 ? 'is' : 'are'} '
+              'elevated. Follow your nephrologist or renal dietitian.';
     case StageBand.dialysis:
-      return flags.contains('potassium') || flags.contains('phosphorus')
-          ? 'Portion and frequency depend on your labs and dialysis plan — '
-              'follow your nephrologist or renal dietitian.'
-          : 'Fit into your individualized plan — follow your renal dietitian, '
-              'as needs differ on dialysis.';
+      return flags.isEmpty
+          ? 'Fit into your individualized plan — follow your renal dietitian, '
+              'as needs differ on dialysis.'
+          : 'Portion and frequency depend on your labs and dialysis plan — '
+              'follow your nephrologist or renal dietitian.';
   }
 }
 
