@@ -31,6 +31,16 @@ extension FoodStatusLabel on FoodStatus {
       };
 }
 
+enum NutrientLevel { low, moderate, high }
+
+extension NutrientLevelLabel on NutrientLevel {
+  String get label => switch (this) {
+        NutrientLevel.low => 'Low',
+        NutrientLevel.moderate => 'Moderate',
+        NutrientLevel.high => 'High',
+      };
+}
+
 /// One reference food entry. Static content — see [kFoods].
 class Food {
   const Food({
@@ -42,6 +52,10 @@ class Food {
     required this.prep,
     this.goodMethods = const [],
     this.avoidMethods = const [],
+    this.servingSize,
+    this.potassium,
+    this.phosphorus,
+    this.sodium,
   });
 
   final String name;
@@ -52,4 +66,8 @@ class Food {
   final String prep; // one-line preparation guidance
   final List<String> goodMethods; // recommended cooking methods
   final List<String> avoidMethods; // methods/forms to avoid
+  final String? servingSize; // e.g. '1 small apple (~100–150 g)'
+  final NutrientLevel? potassium;
+  final NutrientLevel? phosphorus;
+  final NutrientLevel? sodium;
 }
