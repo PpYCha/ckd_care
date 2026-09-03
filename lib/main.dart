@@ -138,8 +138,9 @@ class _HomeShellState extends State<HomeShell> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(_titles[_index])),
-      body: _screens[_index],
+      // Home leads with its own greeting header, so it needs no app-bar title.
+      appBar: _index == 0 ? null : AppBar(title: Text(_titles[_index])),
+      body: SafeArea(bottom: false, child: _screens[_index]),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: _onSelect,

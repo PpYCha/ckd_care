@@ -80,6 +80,56 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return '${months[sd.month - 1]} ${sd.day}, ${sd.year}';
   }
 
+  ({String text, String emoji}) _greeting() {
+    final h = DateTime.now().hour;
+    if (h < 12) return (text: 'Good morning', emoji: '☀️');
+    if (h < 18) return (text: 'Good afternoon', emoji: '🌤️');
+    return (text: 'Good evening', emoji: '🌙');
+  }
+
+  Widget _header() {
+    final g = _greeting();
+    final text = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.only(top: 4, bottom: 14),
+      child: Row(children: [
+        Expanded(
+          child: Text('${g.text} ${g.emoji}', style: text.headlineMedium),
+        ),
+        const Text('🫘', style: TextStyle(fontSize: 30)),
+      ]),
+    );
+  }
+
+  Widget _hero() {
+    final cs = Theme.of(context).colorScheme;
+    final text = Theme.of(context).textTheme;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            cs.primaryContainer,
+            Color.alphaBlend(cs.primary.withValues(alpha: 0.10), cs.surface),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(22),
+      ),
+      child: Row(children: [
+        Expanded(
+          child: Text(
+            'Small choices today,\nbetter kidneys tomorrow 💚',
+            style: text.titleMedium?.copyWith(
+                color: cs.onPrimaryContainer, height: 1.35),
+          ),
+        ),
+      ]),
+    );
+  }
+
   List<DueDose> _bucket(List<DueDose> all, int startH, int endH) =>
       all.where((x) => x.scheduledTime.hour >= startH && x.scheduledTime.hour < endH)
           .toList();
@@ -202,6 +252,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
       children: [
+        _header(),
+        _hero(),
         _dateBar(d),
         FluidGauge(
             intakeMl: d.fluidTotals?.intakeMl ?? 0, limitMl: d.fluidLimitMl),

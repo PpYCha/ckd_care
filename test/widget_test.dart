@@ -40,6 +40,13 @@ class _FakeNotifications {}
 
 void main() {
   testWidgets('dashboard renders gauge and due dose', (tester) async {
+    // Use a phone-sized viewport so the (lazily built) medicine tile below the
+    // greeting/hero header is in the tree for the finders.
+    tester.view.physicalSize = const Size(1080, 2600);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
     final provider = DashboardProvider(
       fluid: _FakeFluid(),
       settings: _FakeSettings(),
