@@ -1,6 +1,6 @@
 {
-    "name": "ckd_care",
-    "short_name": "ckd_care",
+    "name": "KidneyTrack",
+    "short_name": "KidneyTrack",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
