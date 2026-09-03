@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:ckd_care/data/food_disclaimer.dart';
+import 'package:ckd_care/data/food_guidance.dart';
 import 'package:ckd_care/data/food_stage_advice.dart';
 import 'package:ckd_care/models/food.dart';
+import 'package:ckd_care/providers/health_profile_provider.dart';
+import 'package:ckd_care/screens/health_profile_screen.dart';
 import 'package:ckd_care/theme/app_theme.dart';
 
 class FoodDetailScreen extends StatelessWidget {
@@ -12,6 +16,8 @@ class FoodDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final text = Theme.of(context).textTheme;
+    final band = stageBandForProfile(
+        context.watch<HealthProfileProvider>().profile);
 
     Widget section(String title, Widget child) => Padding(
           padding: const EdgeInsets.only(top: 20),
@@ -47,6 +53,61 @@ class FoodDetailScreen extends StatelessWidget {
             const SizedBox(width: 8),
             Text(food.category.label, style: text.bodyMedium),
           ]),
+          const SizedBox(height: 16),
+          if (band != null)
+            Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: cs.primary.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: cs.primary.withValues(alpha: 0.4)),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(children: [
+                    Icon(Icons.person_pin_circle_outlined,
+                        size: 18, color: cs.primary),
+                    const SizedBox(width: 8),
+                    Text('For your stage — ${band.label}',
+                        style: text.labelMedium?.copyWith(
+                            color: cs.primary, fontWeight: FontWeight.w800)),
+                  ]),
+                  const SizedBox(height: 8),
+                  Text(stageAdvice(food, band), style: text.bodyLarge),
+                  const SizedBox(height: 8),
+                  Text(clinicianAlert(band), style: text.bodyMedium),
+                ],
+              ),
+            )
+          else
+            Material(
+              color: cs.surface,
+              borderRadius: BorderRadius.circular(14),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(14),
+                onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) => const HealthProfileScreen())),
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: cs.outlineVariant),
+                  ),
+                  child: Row(children: [
+                    Icon(Icons.tune, size: 18, color: cs.onSurfaceVariant),
+                    const SizedBox(width: 8),
+                    Expanded(
+                        child: Text(
+                            'Set your CKD stage for guidance tailored to you.',
+                            style: text.bodyMedium)),
+                    Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
+                  ]),
+                ),
+              ),
+            ),
           section('Why', Text(food.why, style: text.bodyLarge)),
           section(
             'Nutrient concerns',
