@@ -12,14 +12,22 @@ class DialysisCentersScreen extends StatefulWidget {
 class _DialysisCentersScreenState extends State<DialysisCentersScreen> {
   final _repo = DialysisRepository();
   bool _loading = true;
+  bool _loadFailed = false;
   String? _region;
   String? _province;
 
   @override
   void initState() {
     super.initState();
+    // Guard the load so a bad/missing asset shows an error instead of an
+    // infinite spinner.
     _repo.load().then((_) {
       if (mounted) setState(() => _loading = false);
+    }).catchError((_) {
+      if (mounted) setState(() {
+        _loading = false;
+        _loadFailed = true;
+      });
     });
   }
 
@@ -31,6 +39,18 @@ class _DialysisCentersScreenState extends State<DialysisCentersScreen> {
     if (_loading) {
       return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
+      );
+    }
+    if (_loadFailed) {
+      return Scaffold(
+        appBar: AppBar(title: const Text('Dialysis centers')),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Text('Could not load the dialysis center list.',
+                style: text.bodyLarge, textAlign: TextAlign.center),
+          ),
+        ),
       );
     }
 
