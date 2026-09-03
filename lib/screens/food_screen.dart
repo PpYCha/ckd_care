@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:ckd_care/data/food_data.dart';
+import 'package:ckd_care/data/food_stage_advice.dart';
 import 'package:ckd_care/models/food.dart';
+import 'package:ckd_care/providers/health_profile_provider.dart';
 import 'package:ckd_care/screens/food_detail_screen.dart';
 import 'package:ckd_care/screens/food_guidance_screen.dart';
+import 'package:ckd_care/screens/health_profile_screen.dart';
 
 class FoodScreen extends StatefulWidget {
   const FoodScreen({super.key});
@@ -18,6 +22,8 @@ class _FoodScreenState extends State<FoodScreen> {
     final cs = Theme.of(context).colorScheme;
     final text = Theme.of(context).textTheme;
     final grouped = groupByCategory(filterFoods(kFoods, _filter));
+    final band = stageBandForProfile(
+        context.watch<HealthProfileProvider>().profile);
 
     Widget chip(String label, FoodStatus? value) {
       final selected = _filter == value;
@@ -77,6 +83,30 @@ class _FoodScreenState extends State<FoodScreen> {
             ),
           ),
         ),
+        const SizedBox(height: 10),
+        if (band != null)
+          Row(children: [
+            Icon(Icons.check_circle_outline, size: 16, color: cs.primary),
+            const SizedBox(width: 6),
+            Text('Guidance tailored for ${band.label}',
+                style: text.labelMedium?.copyWith(color: cs.primary)),
+          ])
+        else
+          InkWell(
+            onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const HealthProfileScreen())),
+            child: Row(children: [
+              Icon(Icons.tune, size: 16, color: cs.onSurfaceVariant),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text('Set your CKD stage for tailored guidance',
+                    style: text.labelMedium),
+              ),
+              Icon(Icons.chevron_right, size: 18, color: cs.onSurfaceVariant),
+            ]),
+          ),
         const SizedBox(height: 12),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
