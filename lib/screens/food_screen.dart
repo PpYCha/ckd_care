@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:ckd_care/data/food_data.dart';
 import 'package:ckd_care/models/food.dart';
 import 'package:ckd_care/screens/food_detail_screen.dart';
+import 'package:ckd_care/screens/food_guidance_screen.dart';
 
 class FoodScreen extends StatefulWidget {
   const FoodScreen({super.key});
@@ -46,6 +47,35 @@ class _FoodScreenState extends State<FoodScreen> {
               child: Text(kFoodDisclaimer, style: text.bodyMedium),
             ),
           ]),
+        ),
+        const SizedBox(height: 10),
+        Material(
+          color: cs.surface,
+          borderRadius: BorderRadius.circular(14),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(14),
+            onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const FoodGuidanceScreen())),
+            child: Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: cs.outlineVariant),
+              ),
+              child: Row(children: [
+                Icon(Icons.health_and_safety_outlined,
+                    size: 20, color: cs.primary),
+                const SizedBox(width: 10),
+                Expanded(
+                    child: Text('When to consult a doctor or dietitian',
+                        style: text.titleSmall
+                            ?.copyWith(color: cs.onSurface))),
+                Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
+              ]),
+            ),
+          ),
         ),
         const SizedBox(height: 12),
         SingleChildScrollView(
