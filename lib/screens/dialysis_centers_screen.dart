@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:ckd_care/data/dialysis_repository.dart';
 import 'package:ckd_care/models/dialysis_center.dart';
 import 'package:ckd_care/screens/dialysis_center_detail_screen.dart';
+import 'package:ckd_care/theme/app_theme.dart';
 
 class DialysisCentersScreen extends StatefulWidget {
   const DialysisCentersScreen({super.key});
@@ -66,9 +67,23 @@ class _DialysisCentersScreenState extends State<DialysisCentersScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
-          Text('Accredited freestanding dialysis clinics. '
-              'Pick a region, then a province or city.',
-              style: text.bodyMedium?.copyWith(color: cs.onSurfaceVariant)),
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: AppColors.dialysis.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Row(children: [
+              const Text('🗓️', style: TextStyle(fontSize: 26)),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                    'Find an accredited dialysis center near you. Pick a region, '
+                    'then a province or city.',
+                    style: text.bodyMedium?.copyWith(color: cs.onSurface)),
+              ),
+            ]),
+          ),
           const SizedBox(height: 16),
           DropdownButtonFormField<String>(
             initialValue: _region,
@@ -143,6 +158,15 @@ class _CenterRow extends StatelessWidget {
             context,
             MaterialPageRoute(
                 builder: (_) => DialysisCenterDetailScreen(center: center))),
+        leading: Container(
+          width: 46,
+          height: 46,
+          decoration: BoxDecoration(
+              color: AppColors.dialysis.withValues(alpha: 0.15),
+              shape: BoxShape.circle),
+          child: const Icon(Icons.local_hospital_rounded,
+              color: AppColors.dialysis, size: 22),
+        ),
         title: Text(center.name, style: text.titleMedium),
         subtitle: center.address.isEmpty
             ? null

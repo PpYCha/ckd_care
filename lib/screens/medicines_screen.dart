@@ -77,11 +77,13 @@ class _MedicinesScreenState extends State<MedicinesScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
         onTap: () => _openDetail(m),
         leading: Container(
-          width: 44,
-          height: 44,
+          width: 46,
+          height: 46,
           decoration: BoxDecoration(
-              color: cs.primaryContainer, shape: BoxShape.circle),
-          child: Icon(Icons.medication_rounded, color: cs.primary, size: 24),
+              color: AppColors.medicine.withValues(alpha: 0.15),
+              shape: BoxShape.circle),
+          child: const Icon(Icons.medication_rounded,
+              color: AppColors.medicine, size: 24),
         ),
         title: Text(m.name, style: Theme.of(context).textTheme.titleMedium),
         subtitle: Padding(
@@ -127,6 +129,8 @@ class _MedicinesScreenState extends State<MedicinesScreen> {
             ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _openDetail(null),
+        backgroundColor: AppColors.medicine,
+        foregroundColor: Colors.white,
         icon: const Icon(Icons.add),
         label: const Text('Add medicine'),
       ),

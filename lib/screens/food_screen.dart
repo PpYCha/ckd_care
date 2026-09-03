@@ -157,6 +157,12 @@ class _FoodScreenState extends State<FoodScreen> {
   }
 }
 
+IconData _statusIcon(FoodStatus status) => switch (status) {
+      FoodStatus.recommended => Icons.check_circle_rounded,
+      FoodStatus.limit => Icons.error_outline_rounded,
+      FoodStatus.avoid => Icons.do_not_disturb_on_outlined,
+    };
+
 class _FoodRow extends StatelessWidget {
   const _FoodRow({required this.food});
   final Food food;
@@ -177,10 +183,13 @@ class _FoodRow extends StatelessWidget {
         onTap: () => Navigator.push(context,
             MaterialPageRoute(builder: (_) => FoodDetailScreen(food: food))),
         leading: Container(
-          width: 10,
-          height: 44,
+          width: 46,
+          height: 46,
           decoration: BoxDecoration(
-              color: food.status.color, borderRadius: BorderRadius.circular(6)),
+              color: food.status.color.withValues(alpha: 0.15),
+              shape: BoxShape.circle),
+          child: Icon(_statusIcon(food.status),
+              color: food.status.color, size: 22),
         ),
         title: Text(food.name, style: text.titleMedium),
         subtitle: Text(food.concerns.join(' · '), style: text.labelMedium),
