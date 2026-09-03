@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
+import 'package:sqflite_common_ffi/sqflite_ffi.dart';
+import 'package:ckd_care/db/app_database.dart';
 import 'package:ckd_care/models/medicine.dart';
 import 'package:ckd_care/providers/dashboard_provider.dart';
+import 'package:ckd_care/providers/dialysis_schedule_provider.dart';
 import 'package:ckd_care/repositories/fluid_repository.dart';
+import 'package:ckd_care/repositories/settings_repository.dart';
 import 'package:ckd_care/screens/dashboard_screen.dart';
 import 'package:ckd_care/widgets/fluid_gauge.dart';
 
@@ -39,6 +43,8 @@ class _FakeMedicine {
 class _FakeNotifications {}
 
 void main() {
+  sqfliteFfiInit();
+
   testWidgets('dashboard renders gauge and due dose', (tester) async {
     // Use a phone-sized viewport so the (lazily built) medicine tile below the
     // greeting/hero header is in the tree for the finders.
@@ -54,9 +60,15 @@ void main() {
       notifications: _FakeNotifications(),
       now: () => DateTime(2026, 9, 2, 12),
     );
+    final scheduleProvider = DialysisScheduleProvider(SettingsRepository(
+        AppDatabase(databaseFactoryFfi, path: inMemoryDatabasePath)));
     await tester.pumpWidget(MaterialApp(
-      home: ChangeNotifierProvider<DashboardProvider>.value(
-        value: provider,
+      home: MultiProvider(
+        providers: [
+          ChangeNotifierProvider<DashboardProvider>.value(value: provider),
+          ChangeNotifierProvider<DialysisScheduleProvider>.value(
+              value: scheduleProvider),
+        ],
         child: const Scaffold(body: DashboardScreen()),
       ),
     ));

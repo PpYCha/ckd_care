@@ -5,6 +5,7 @@ import 'package:ckd_care/providers/health_profile_provider.dart';
 import 'package:ckd_care/providers/settings_provider.dart';
 import 'package:ckd_care/screens/health_profile_screen.dart';
 import 'package:ckd_care/screens/dialysis_centers_screen.dart';
+import 'package:ckd_care/screens/dialysis_schedule_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -80,6 +81,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
         onTap: () => Navigator.push(
             context,
             MaterialPageRoute(builder: (_) => const DialysisCentersScreen())),
+      ),
+      const Divider(),
+      ListTile(
+        leading: const Icon(Icons.event_available_outlined),
+        title: const Text('Dialysis schedule'),
+        subtitle: const Text('Your sessions and next appointment'),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (_) => const DialysisScheduleScreen())),
       ),
       const Divider(),
       ListTile(

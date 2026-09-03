@@ -2,11 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:ckd_care/models/dose_log.dart';
 import 'package:ckd_care/models/fluid_entry.dart';
+import 'package:ckd_care/models/dialysis_schedule.dart';
 import 'package:ckd_care/providers/dashboard_provider.dart';
 import 'package:ckd_care/providers/fluid_provider.dart';
+import 'package:ckd_care/providers/dialysis_schedule_provider.dart';
+import 'package:ckd_care/screens/dialysis_schedule_screen.dart';
 import 'package:ckd_care/widgets/dose_tile.dart';
 import 'package:ckd_care/widgets/fluid_amount_dialog.dart';
 import 'package:ckd_care/widgets/fluid_gauge.dart';
+import 'package:ckd_care/widgets/next_dialysis_card.dart';
 import 'package:ckd_care/theme/app_theme.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -21,6 +25,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback(
       (_) => context.read<DashboardProvider>().refresh(),
+    );
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => context.read<DialysisScheduleProvider>().load(),
     );
   }
 
@@ -248,12 +255,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final d = context.watch<DashboardProvider>();
+    final schedule = context.watch<DialysisScheduleProvider>().schedule;
+    final nextDialysis =
+        schedule.isSet ? nextSession(schedule, now: DateTime.now()) : null;
     final canMark = !_isFutureDate(d);
     return ListView(
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
       children: [
         _header(),
         _hero(),
+        if (nextDialysis != null) ...[
+          NextDialysisCard(
+            session: nextDialysis,
+            onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (_) => const DialysisScheduleScreen())),
+          ),
+          const SizedBox(height: 16),
+        ],
         _dateBar(d),
         FluidGauge(
             intakeMl: d.fluidTotals?.intakeMl ?? 0, limitMl: d.fluidLimitMl),
