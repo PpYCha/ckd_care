@@ -839,10 +839,12 @@ const List<Food> kFoods = [
     name: 'Turmeric (luyang dilaw)',
     category: FoodCategory.other,
     status: FoodStatus.limit,
-    why: 'As a cooking spice, small amounts add flavor without much sodium. As '
-        'a supplement or concentrated remedy it can interact with medicines and '
-        'is not proven for kidney disease — ask your care team first.',
-    concerns: ['Ask your dietitian about supplement forms'],
+    why: 'As a cooking spice, small amounts add flavor without much sodium. It '
+        'is fairly high in oxalate (a kidney-stone concern for some) and, as a '
+        'supplement, can interact with blood thinners and is not proven for '
+        'kidney disease — so keep to culinary amounts and ask your care team '
+        'before any supplement.',
+    concerns: ['Oxalate', 'Ask your dietitian about supplement forms'],
     prep: 'Use pinches to season food. Do not take high-dose supplements '
         'without medical advice.',
     goodMethods: ['Small amounts in cooking'],
@@ -889,9 +891,10 @@ const List<Food> kFoods = [
     name: 'Herbal supplements & traditional remedies',
     category: FoodCategory.other,
     status: FoodStatus.avoid,
-    why: 'Many herbal products, supplements, and traditional remedies are not '
-        'tested for CKD. Some are high in potassium, some interact with '
-        'medicines, and some can harm the kidneys.',
+    why: 'Many herbal products, supplements, and traditional remedies — for '
+        'example ampalaya capsules, banaba tea, cranberry extract, or '
+        'oil-of-oregano — are not tested for CKD. Some are high in potassium, '
+        'some interact with medicines, and some can harm the kidneys.',
     concerns: ['Ask your nephrologist or dietitian first', 'Possible potassium'],
     prep: 'Always ask your nephrologist or renal dietitian before using any '
         'herbal product, supplement, or traditional remedy.',
