@@ -770,6 +770,138 @@ const List<Food> kFoods = [
     phosphorus: NutrientLevel.low,
     sodium: NutrientLevel.low,
   ),
+
+  // --- Oils & fats ---
+  Food(
+    name: 'Coconut oil',
+    category: FoodCategory.other,
+    status: FoodStatus.limit,
+    why: 'Very high in saturated fat, which can raise heart-disease risk that '
+        'is already higher in CKD. Use small amounts.',
+    concerns: ['Saturated fat'],
+    prep: 'Use sparingly; prefer a heart-healthier oil for everyday cooking.',
+    goodMethods: ['Small amounts for flavor'],
+    avoidMethods: ['Frequent frying', 'Large amounts'],
+    servingSize: '1 tsp occasionally',
+    potassium: NutrientLevel.low,
+    phosphorus: NutrientLevel.low,
+    sodium: NutrientLevel.low,
+  ),
+  Food(
+    name: 'Olive oil',
+    category: FoodCategory.other,
+    status: FoodStatus.recommended,
+    why: 'A heart-healthier fat; a good choice for a kidney- and heart-friendly '
+        'diet in moderation.',
+    concerns: ['Use in moderation'],
+    prep: 'Drizzle raw or sauté on low heat; use in place of butter or '
+        'coconut oil.',
+    goodMethods: ['Drizzling raw', 'Sautéing (low heat)'],
+    avoidMethods: ['Deep-frying'],
+    servingSize: '1–2 tsp',
+    potassium: NutrientLevel.low,
+    phosphorus: NutrientLevel.low,
+    sodium: NutrientLevel.low,
+  ),
+  Food(
+    name: 'Canola / vegetable oil',
+    category: FoodCategory.other,
+    status: FoodStatus.recommended,
+    why: 'Neutral, lower-saturated-fat oils are fine for everyday cooking in '
+        'moderation.',
+    concerns: ['Use in moderation'],
+    prep: 'Use small amounts for sautéing or stir-frying.',
+    goodMethods: ['Sautéing', 'Stir-frying (little oil)'],
+    avoidMethods: ['Deep-frying', 'Reusing frying oil'],
+    servingSize: '1–2 tsp',
+    potassium: NutrientLevel.low,
+    phosphorus: NutrientLevel.low,
+    sodium: NutrientLevel.low,
+  ),
+  Food(
+    name: 'Apple cider vinegar',
+    category: FoodCategory.other,
+    status: FoodStatus.recommended,
+    why: 'Adds tang without sodium — a handy salt alternative in dressings. It '
+        'is a flavoring, not a treatment for kidney disease.',
+    concerns: ['Low sodium'],
+    prep: 'Mix a small amount into dressings or marinades instead of salt.',
+    goodMethods: ['As dressing or marinade (small amounts)'],
+    avoidMethods: ['Drinking large amounts as a remedy'],
+    servingSize: '1–2 tsp, diluted',
+    potassium: NutrientLevel.low,
+    phosphorus: NutrientLevel.low,
+    sodium: NutrientLevel.low,
+  ),
+
+  // --- Herbs & herbal remedies ---
+  Food(
+    name: 'Turmeric (luyang dilaw)',
+    category: FoodCategory.other,
+    status: FoodStatus.limit,
+    why: 'As a cooking spice, small amounts add flavor without much sodium. As '
+        'a supplement or concentrated remedy it can interact with medicines and '
+        'is not proven for kidney disease — ask your care team first.',
+    concerns: ['Ask your dietitian about supplement forms'],
+    prep: 'Use pinches to season food. Do not take high-dose supplements '
+        'without medical advice.',
+    goodMethods: ['Small amounts in cooking'],
+    avoidMethods: ['High-dose supplements without medical advice'],
+    servingSize: 'A pinch in cooking',
+    potassium: NutrientLevel.low,
+    phosphorus: NutrientLevel.low,
+    sodium: NutrientLevel.low,
+  ),
+  Food(
+    name: 'Oregano',
+    category: FoodCategory.other,
+    status: FoodStatus.recommended,
+    why: 'A flavorful herb that helps replace salt. Culinary amounts are '
+        'generally fine; oil-of-oregano or concentrated supplements should be '
+        'discussed with your care team.',
+    concerns: ['Low sodium'],
+    prep: 'Sprinkle fresh or dried oregano to season food instead of salt.',
+    goodMethods: ['As seasoning'],
+    avoidMethods: ['Concentrated oregano-oil supplements without medical advice'],
+    servingSize: 'To taste in cooking',
+    potassium: NutrientLevel.low,
+    phosphorus: NutrientLevel.low,
+    sodium: NutrientLevel.low,
+  ),
+  Food(
+    name: 'Lemongrass (tanglad)',
+    category: FoodCategory.other,
+    status: FoodStatus.recommended,
+    why: 'An aromatic stalk used to flavor soups and tea; adds flavor without '
+        'sodium. Culinary use is generally fine; strong medicinal preparations '
+        'should be cleared with your care team.',
+    concerns: ['Low sodium'],
+    prep: 'Add a stalk to soups, or steep for a light tea, as a salt-free '
+        'flavor.',
+    goodMethods: ['In soups', 'Light tea'],
+    avoidMethods: ['Strong medicinal preparations without medical advice'],
+    servingSize: '1 stalk in cooking',
+    potassium: NutrientLevel.low,
+    phosphorus: NutrientLevel.low,
+    sodium: NutrientLevel.low,
+  ),
+  Food(
+    name: 'Herbal supplements & traditional remedies',
+    category: FoodCategory.other,
+    status: FoodStatus.avoid,
+    why: 'Many herbal products, supplements, and traditional remedies are not '
+        'tested for CKD. Some are high in potassium, some interact with '
+        'medicines, and some can harm the kidneys.',
+    concerns: ['Ask your nephrologist or dietitian first', 'Possible potassium'],
+    prep: 'Always ask your nephrologist or renal dietitian before using any '
+        'herbal product, supplement, or traditional remedy.',
+    goodMethods: [],
+    avoidMethods: ['Using any remedy without medical advice'],
+    servingSize: 'Ask your care team',
+    potassium: NutrientLevel.moderate,
+    phosphorus: NutrientLevel.low,
+    sodium: NutrientLevel.low,
+  ),
 ];
 
 /// All foods when [status] is null, otherwise only those with that status.
