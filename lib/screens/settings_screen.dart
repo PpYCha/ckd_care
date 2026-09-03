@@ -4,6 +4,7 @@ import 'package:ckd_care/models/health_profile.dart';
 import 'package:ckd_care/providers/health_profile_provider.dart';
 import 'package:ckd_care/providers/settings_provider.dart';
 import 'package:ckd_care/screens/health_profile_screen.dart';
+import 'package:ckd_care/screens/dialysis_centers_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -69,6 +70,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
             context,
             MaterialPageRoute(
                 builder: (_) => const HealthProfileScreen())),
+      ),
+      const Divider(),
+      ListTile(
+        leading: const Icon(Icons.local_hospital_outlined),
+        title: const Text('Dialysis centers'),
+        subtitle: const Text('Find accredited clinics by region'),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const DialysisCentersScreen())),
       ),
       const Divider(),
       ListTile(
