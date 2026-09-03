@@ -1,6 +1,7 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:ckd_care/db/app_database.dart';
 import 'package:ckd_care/models/health_profile.dart';
+import 'package:ckd_care/models/dialysis_schedule.dart';
 
 const String kFluidLimit = 'fluid_limit_ml';
 const String kNotifications = 'notifications_enabled';
@@ -12,6 +13,11 @@ const String kProfileDiabetes = 'profile_diabetes';
 const String kProfileElevatedPotassium = 'profile_elevated_potassium';
 const String kProfileElevatedPhosphorus = 'profile_elevated_phosphorus';
 const String kProfileFluidRestriction = 'profile_fluid_restriction';
+const String kDialysisSchedWeekdays = 'dialysis_sched_weekdays';
+const String kDialysisSchedTime = 'dialysis_sched_time';
+const String kDialysisSchedDuration = 'dialysis_sched_duration';
+const String kDialysisSchedClinic = 'dialysis_sched_clinic';
+const String kDialysisSchedClinicAddress = 'dialysis_sched_clinic_address';
 
 class SettingsRepository {
   SettingsRepository(this._db);
@@ -73,5 +79,28 @@ class SettingsRepository {
     await _set(kProfileElevatedPotassium, p.elevatedPotassium.toString());
     await _set(kProfileElevatedPhosphorus, p.elevatedPhosphorus.toString());
     await _set(kProfileFluidRestriction, p.fluidRestriction.toString());
+  }
+
+  Future<DialysisSchedule> getDialysisSchedule() async {
+    return DialysisSchedule(
+      weekdays: decodeWeekdays(await _get(kDialysisSchedWeekdays)),
+      timeOfDay: await _get(kDialysisSchedTime) ?? '09:00',
+      durationHours: int.tryParse(await _get(kDialysisSchedDuration) ?? '') ?? 4,
+      clinicName: await _get(kDialysisSchedClinic) ?? '',
+      clinicAddress: await _get(kDialysisSchedClinicAddress) ?? '',
+    );
+  }
+
+  Future<void> saveDialysisSchedule(DialysisSchedule s) async {
+    await _set(kDialysisSchedWeekdays, encodeWeekdays(s.weekdays));
+    await _set(kDialysisSchedTime, s.timeOfDay);
+    await _set(kDialysisSchedDuration, s.durationHours.toString());
+    await _set(kDialysisSchedClinic, s.clinicName);
+    await _set(kDialysisSchedClinicAddress, s.clinicAddress);
+  }
+
+  Future<void> clearDialysisSchedule() async {
+    // Empty weekdays means "unset"; keep other keys harmless.
+    await _set(kDialysisSchedWeekdays, '');
   }
 }

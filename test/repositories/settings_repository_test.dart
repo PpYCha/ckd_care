@@ -3,6 +3,7 @@ import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 import 'package:ckd_care/db/app_database.dart';
 import 'package:ckd_care/repositories/settings_repository.dart';
 import 'package:ckd_care/models/health_profile.dart';
+import 'package:ckd_care/models/dialysis_schedule.dart';
 
 void main() {
   sqfliteFfiInit();
@@ -47,5 +48,27 @@ void main() {
     );
     await repo.saveHealthProfile(p);
     expect(await repo.getHealthProfile(), p);
+  });
+
+  test('dialysis schedule is unset until saved, then round-trips; clear removes it',
+      () async {
+    final repo = SettingsRepository(
+        AppDatabase(databaseFactoryFfi, path: inMemoryDatabasePath));
+
+    final initial = await repo.getDialysisSchedule();
+    expect(initial.isSet, isFalse);
+
+    const s = DialysisSchedule(
+      weekdays: {1, 3, 5},
+      timeOfDay: '09:00',
+      durationHours: 4,
+      clinicName: 'Healthy Kidney Center',
+      clinicAddress: '123 Main St',
+    );
+    await repo.saveDialysisSchedule(s);
+    expect(await repo.getDialysisSchedule(), s);
+
+    await repo.clearDialysisSchedule();
+    expect((await repo.getDialysisSchedule()).isSet, isFalse);
   });
 }
