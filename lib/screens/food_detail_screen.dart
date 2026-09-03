@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:ckd_care/data/food_disclaimer.dart';
+import 'package:ckd_care/data/food_stage_advice.dart';
 import 'package:ckd_care/models/food.dart';
 import 'package:ckd_care/theme/app_theme.dart';
 
@@ -53,6 +54,44 @@ class FoodDetailScreen extends StatelessWidget {
               spacing: 8,
               runSpacing: 8,
               children: [for (final c in food.concerns) Chip(label: Text(c))],
+            ),
+          ),
+          if (food.servingSize != null)
+            section('Suggested serving', Text(food.servingSize!, style: text.bodyLarge)),
+          if (food.potassium != null ||
+              food.phosphorus != null ||
+              food.sodium != null)
+            section(
+              'Nutrient levels',
+              Wrap(spacing: 8, runSpacing: 8, children: [
+                if (food.potassium != null)
+                  _NutrientChip(label: 'Potassium', level: food.potassium!),
+                if (food.phosphorus != null)
+                  _NutrientChip(label: 'Phosphorus', level: food.phosphorus!),
+                if (food.sodium != null)
+                  _NutrientChip(label: 'Sodium', level: food.sodium!),
+              ]),
+            ),
+          section(
+            'By CKD stage',
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                for (final band in StageBand.values)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(band.label,
+                            style: text.labelMedium
+                                ?.copyWith(fontWeight: FontWeight.w800)),
+                        const SizedBox(height: 2),
+                        Text(stageAdvice(food, band), style: text.bodyMedium),
+                      ],
+                    ),
+                  ),
+              ],
             ),
           ),
           section('How to prepare', Text(food.prep, style: text.bodyLarge)),
@@ -118,6 +157,34 @@ class _StatusBadge extends StatelessWidget {
               fontSize: 13,
               fontWeight: FontWeight.w800,
               color: status.color)),
+    );
+  }
+}
+
+class _NutrientChip extends StatelessWidget {
+  const _NutrientChip({required this.label, required this.level});
+  final String label;
+  final NutrientLevel level;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = switch (level) {
+      NutrientLevel.low => AppColors.good,
+      NutrientLevel.moderate => AppColors.warn,
+      NutrientLevel.high => AppColors.over,
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text('$label: ${level.label}',
+          style: TextStyle(
+              fontFamily: 'Nunito',
+              fontSize: 12.5,
+              fontWeight: FontWeight.w800,
+              color: color)),
     );
   }
 }
