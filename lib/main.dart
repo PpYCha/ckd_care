@@ -7,6 +7,7 @@ import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:ckd_care/db/app_database.dart';
 import 'package:ckd_care/providers/dashboard_provider.dart';
 import 'package:ckd_care/providers/fluid_provider.dart';
+import 'package:ckd_care/providers/health_profile_provider.dart';
 import 'package:ckd_care/providers/medicine_provider.dart';
 import 'package:ckd_care/providers/settings_provider.dart';
 import 'package:ckd_care/repositories/fluid_repository.dart';
@@ -91,6 +92,7 @@ class CkdApp extends StatelessWidget {
         ChangeNotifierProvider(
             create: (_) => SettingsProvider(
                 settingsRepo, medicineRepo, notifications)),
+        ChangeNotifierProvider(create: (_) => HealthProfileProvider(settingsRepo)),
         ChangeNotifierProvider(create: (_) => FluidProvider(fluidRepo)),
         ChangeNotifierProvider(
             create: (_) =>
