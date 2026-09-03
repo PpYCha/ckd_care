@@ -40,4 +40,20 @@ void main() {
     expect(grouped.keys.toList(), [FoodCategory.fruits, FoodCategory.drinks]);
     expect(grouped.values.every((l) => l.isNotEmpty), isTrue);
   });
+
+  test('every food has serving size and nutrient levels', () {
+    for (final f in kFoods) {
+      expect(f.servingSize, isNotNull, reason: '${f.name} servingSize');
+      expect(f.potassium, isNotNull, reason: '${f.name} potassium');
+      expect(f.phosphorus, isNotNull, reason: '${f.name} phosphorus');
+      expect(f.sodium, isNotNull, reason: '${f.name} sodium');
+    }
+  });
+
+  test('includes Filipino staples', () {
+    final names = kFoods.map((f) => f.name.toLowerCase()).join(' | ');
+    expect(names, contains('malunggay'));
+    expect(names, contains('tinola'));
+    expect(names, contains('fish sauce'));
+  });
 }
