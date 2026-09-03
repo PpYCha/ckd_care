@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:ckd_care/models/health_profile.dart';
+import 'package:ckd_care/providers/health_profile_provider.dart';
 import 'package:ckd_care/providers/settings_provider.dart';
+import 'package:ckd_care/screens/health_profile_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -12,8 +15,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance
-        .addPostFrameCallback((_) => context.read<SettingsProvider>().load());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<SettingsProvider>().load();
+      context.read<HealthProfileProvider>().load();
+    });
   }
 
   Future<void> _editLimit() async {
@@ -40,10 +45,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  String _profileSummary(HealthProfile p) {
+    if (!p.isSet && p.dialysisStatus == DialysisStatus.none) return 'Not set';
+    final parts = <String>[
+      if (p.ckdStage != null) p.ckdStage!.label,
+      if (p.dialysisStatus != DialysisStatus.none) p.dialysisStatus.label,
+    ];
+    return parts.isEmpty ? 'Not set' : parts.join(' · ');
+  }
+
   @override
   Widget build(BuildContext context) {
     final s = context.watch<SettingsProvider>();
+    final profile = context.watch<HealthProfileProvider>().profile;
     return ListView(children: [
+      ListTile(
+        leading: const Icon(Icons.badge_outlined),
+        title: const Text('Health profile'),
+        subtitle: Text(_profileSummary(profile)),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+                builder: (_) => const HealthProfileScreen())),
+      ),
+      const Divider(),
       ListTile(
         title: const Text('Daily fluid limit'),
         subtitle: Text(s.fluidLimitMl == null ? 'Not set' : '${s.fluidLimitMl} mL'),
