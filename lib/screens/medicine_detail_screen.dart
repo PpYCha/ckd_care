@@ -32,7 +32,9 @@ class _MedicineDetailScreenState extends State<MedicineDetailScreen> {
       // Pre-load existing times for edit.
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         final times = await context.read<MedicineProvider>().timesForMedicine(m.id!);
-        if (mounted) setState(() => _times..clear()..addAll(times));
+        if (mounted) {
+          setState(() => _times..clear()..addAll(times));
+        }
       });
     }
   }

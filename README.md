@@ -26,3 +26,6 @@ flutter build apk --release
 
 Once the process finishes, you will find your compiled APK file(s) in your project folder at this path:
 build/app/outputs/flutter-apk/
+
+flutter build appbundle --release
+C:\projects\personal\ckd_care\build\app\outputs\bundle\release\app-release.aab

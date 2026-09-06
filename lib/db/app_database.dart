@@ -5,7 +5,7 @@ import 'package:sqflite/sqflite.dart';
 class AppDatabase {
   AppDatabase(this._factory, {this.path = 'ckd_care.db'});
 
-  static const int schemaVersion = 3;
+  static const int schemaVersion = 4;
 
   final DatabaseFactory _factory;
   final String path;
@@ -25,12 +25,18 @@ class AppDatabase {
         onUpgrade: (db, oldVersion, newVersion) async {
           if (oldVersion < 2) {
             await db.execute(
-                'ALTER TABLE medicine ADD COLUMN stock_qty INTEGER NOT NULL DEFAULT 0');
+              'ALTER TABLE medicine ADD COLUMN stock_qty INTEGER NOT NULL DEFAULT 0',
+            );
             await db.execute('ALTER TABLE medicine ADD COLUMN end_date TEXT');
           }
           if (oldVersion < 3) {
             await db.execute(
-                'ALTER TABLE medicine ADD COLUMN consume_until_empty INTEGER NOT NULL DEFAULT 0');
+              'ALTER TABLE medicine ADD COLUMN consume_until_empty INTEGER NOT NULL DEFAULT 0',
+            );
+          }
+          if (oldVersion < 4) {
+            await db.execute(_dialysisSessionLogStatement);
+            await db.execute(_dialysisSessionLogStartIndex);
           }
         },
       ),
@@ -95,5 +101,20 @@ class AppDatabase {
     )''',
     'CREATE INDEX idx_dose_med_time ON dose_log(medicine_id, scheduled_time)',
     'CREATE TABLE setting(key TEXT PRIMARY KEY, value TEXT NOT NULL)',
+    _dialysisSessionLogStatement,
+    _dialysisSessionLogStartIndex,
   ];
+
+  static const String _dialysisSessionLogStatement = '''
+    CREATE TABLE dialysis_session_log(
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      session_key TEXT NOT NULL UNIQUE,
+      session_start TEXT NOT NULL,
+      pre_weight_kg REAL,
+      post_weight_kg REAL,
+      updated_at TEXT NOT NULL
+    )''';
+
+  static const String _dialysisSessionLogStartIndex =
+      'CREATE INDEX idx_dialysis_session_start ON dialysis_session_log(session_start)';
 }

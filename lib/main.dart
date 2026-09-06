@@ -7,10 +7,12 @@ import 'package:timezone/data/latest.dart' as tzdata;
 import 'package:ckd_care/db/app_database.dart';
 import 'package:ckd_care/providers/dashboard_provider.dart';
 import 'package:ckd_care/providers/dialysis_schedule_provider.dart';
+import 'package:ckd_care/providers/dialysis_session_log_provider.dart';
 import 'package:ckd_care/providers/fluid_provider.dart';
 import 'package:ckd_care/providers/health_profile_provider.dart';
 import 'package:ckd_care/providers/medicine_provider.dart';
 import 'package:ckd_care/providers/settings_provider.dart';
+import 'package:ckd_care/repositories/dialysis_session_log_repository.dart';
 import 'package:ckd_care/repositories/fluid_repository.dart';
 import 'package:ckd_care/repositories/medicine_repository.dart';
 import 'package:ckd_care/repositories/settings_repository.dart';
@@ -50,6 +52,7 @@ Future<void> main() async {
   final fluidRepo = FluidRepository(db);
   final settingsRepo = SettingsRepository(db);
   final medicineRepo = MedicineRepository(db);
+  final dialysisSessionLogRepo = DialysisSessionLogRepository(db);
   final notifications = NotificationService(plugin);
 
   // Reschedule-on-boot: re-register reminders for every active medicine.
@@ -69,6 +72,7 @@ Future<void> main() async {
     fluidRepo: fluidRepo,
     settingsRepo: settingsRepo,
     medicineRepo: medicineRepo,
+    dialysisSessionLogRepo: dialysisSessionLogRepo,
     notifications: notifications,
   ));
 }
@@ -79,11 +83,13 @@ class CkdApp extends StatelessWidget {
     required this.fluidRepo,
     required this.settingsRepo,
     required this.medicineRepo,
+    required this.dialysisSessionLogRepo,
     required this.notifications,
   });
   final FluidRepository fluidRepo;
   final SettingsRepository settingsRepo;
   final MedicineRepository medicineRepo;
+  final DialysisSessionLogRepository dialysisSessionLogRepo;
   final NotificationService notifications;
 
   @override
@@ -96,6 +102,8 @@ class CkdApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => HealthProfileProvider(settingsRepo)),
         ChangeNotifierProvider(
             create: (_) => DialysisScheduleProvider(settingsRepo)),
+        ChangeNotifierProvider(
+            create: (_) => DialysisSessionLogProvider(dialysisSessionLogRepo)),
         ChangeNotifierProvider(create: (_) => FluidProvider(fluidRepo)),
         ChangeNotifierProvider(
             create: (_) =>
