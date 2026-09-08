@@ -11,12 +11,14 @@ class DueDose {
   const DueDose({
     required this.medicineId,
     required this.medicineName,
+    required this.stockQty,
     required this.timeOfDay,
     required this.scheduledTime,
     required this.status,
   });
   final int medicineId;
   final String medicineName;
+  final int stockQty;
   final String timeOfDay;
   final DateTime scheduledTime;
   final DoseStatus? status;
@@ -32,10 +34,10 @@ class DashboardProvider extends ChangeNotifier {
     // touch scheduling (see Fix 3).
     required dynamic notifications,
     DateTime Function()? now,
-  })  : _fluid = fluid,
-        _settings = settings,
-        _medicine = medicine,
-        _now = now ?? DateTime.now;
+  }) : _fluid = fluid,
+       _settings = settings,
+       _medicine = medicine,
+       _now = now ?? DateTime.now;
 
   final dynamic _fluid;
   final dynamic _settings;
@@ -79,16 +81,24 @@ class DashboardProvider extends ChangeNotifier {
       final times = await _medicine.timesFor(m.id);
       for (final t in times) {
         final parts = (t.timeOfDay as String).split(':');
-        final scheduled = DateTime(today.year, today.month, today.day,
-            int.parse(parts[0]), int.parse(parts[1]));
+        final scheduled = DateTime(
+          today.year,
+          today.month,
+          today.day,
+          int.parse(parts[0]),
+          int.parse(parts[1]),
+        );
         final status = await _medicine.statusFor(m.id, scheduled);
-        due.add(DueDose(
-          medicineId: m.id,
-          medicineName: m.name,
-          timeOfDay: t.timeOfDay,
-          scheduledTime: scheduled,
-          status: status,
-        ));
+        due.add(
+          DueDose(
+            medicineId: m.id,
+            medicineName: m.name,
+            stockQty: m.stockQty,
+            timeOfDay: t.timeOfDay,
+            scheduledTime: scheduled,
+            status: status,
+          ),
+        );
       }
     }
     due.sort((a, b) => a.scheduledTime.compareTo(b.scheduledTime));

@@ -21,9 +21,9 @@ class Medicine {
   final int stockQty;
   final DateTime? endDate;
 
-  /// true = a finite course taken until stock runs out; false = indefinite
-  /// maintenance med. Purely classification — the dashboard already hides any
-  /// medicine at 0 stock.
+  /// true = a finite course taken until stock runs out; false = an indefinite
+  /// maintenance medicine. Out-of-stock maintenance medicines remain visible
+  /// on the dashboard so the user can restock them.
   final bool consumeUntilEmpty;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -36,34 +36,34 @@ class Medicine {
       '${d.day.toString().padLeft(2, '0')}';
 
   factory Medicine.fromMap(Map<String, Object?> m) => Medicine(
-        id: m['id'] as int?,
-        uuid: m['uuid'] as String,
-        name: m['name'] as String,
-        dosage: m['dosage'] as String?,
-        active: (m['active'] as int) == 1,
-        stockQty: m['stock_qty'] as int,
-        endDate: m['end_date'] == null
-            ? null
-            : DateTime.parse(m['end_date'] as String),
-        consumeUntilEmpty: (m['consume_until_empty'] as int? ?? 0) == 1,
-        createdAt: DateTime.parse(m['created_at'] as String),
-        updatedAt: DateTime.parse(m['updated_at'] as String),
-        deleted: (m['deleted'] as int) == 1,
-      );
+    id: m['id'] as int?,
+    uuid: m['uuid'] as String,
+    name: m['name'] as String,
+    dosage: m['dosage'] as String?,
+    active: (m['active'] as int) == 1,
+    stockQty: m['stock_qty'] as int,
+    endDate: m['end_date'] == null
+        ? null
+        : DateTime.parse(m['end_date'] as String),
+    consumeUntilEmpty: (m['consume_until_empty'] as int? ?? 0) == 1,
+    createdAt: DateTime.parse(m['created_at'] as String),
+    updatedAt: DateTime.parse(m['updated_at'] as String),
+    deleted: (m['deleted'] as int) == 1,
+  );
 
   Map<String, Object?> toMap() => {
-        if (id != null) 'id': id,
-        'uuid': uuid,
-        'name': name,
-        'dosage': dosage,
-        'active': active ? 1 : 0,
-        'stock_qty': stockQty,
-        'end_date': endDate == null ? null : fmtDate(endDate!),
-        'consume_until_empty': consumeUntilEmpty ? 1 : 0,
-        'created_at': createdAt.toIso8601String(),
-        'updated_at': updatedAt.toIso8601String(),
-        'deleted': deleted ? 1 : 0,
-      };
+    if (id != null) 'id': id,
+    'uuid': uuid,
+    'name': name,
+    'dosage': dosage,
+    'active': active ? 1 : 0,
+    'stock_qty': stockQty,
+    'end_date': endDate == null ? null : fmtDate(endDate!),
+    'consume_until_empty': consumeUntilEmpty ? 1 : 0,
+    'created_at': createdAt.toIso8601String(),
+    'updated_at': updatedAt.toIso8601String(),
+    'deleted': deleted ? 1 : 0,
+  };
 }
 
 class MedicineTime {
@@ -86,22 +86,22 @@ class MedicineTime {
   final bool deleted;
 
   factory MedicineTime.fromMap(Map<String, Object?> m) => MedicineTime(
-        id: m['id'] as int?,
-        uuid: m['uuid'] as String,
-        medicineId: m['medicine_id'] as int?,
-        medicineUuid: m['medicine_uuid'] as String,
-        timeOfDay: m['time_of_day'] as String,
-        updatedAt: DateTime.parse(m['updated_at'] as String),
-        deleted: (m['deleted'] as int) == 1,
-      );
+    id: m['id'] as int?,
+    uuid: m['uuid'] as String,
+    medicineId: m['medicine_id'] as int?,
+    medicineUuid: m['medicine_uuid'] as String,
+    timeOfDay: m['time_of_day'] as String,
+    updatedAt: DateTime.parse(m['updated_at'] as String),
+    deleted: (m['deleted'] as int) == 1,
+  );
 
   Map<String, Object?> toMap() => {
-        if (id != null) 'id': id,
-        'uuid': uuid,
-        if (medicineId != null) 'medicine_id': medicineId,
-        'medicine_uuid': medicineUuid,
-        'time_of_day': timeOfDay,
-        'updated_at': updatedAt.toIso8601String(),
-        'deleted': deleted ? 1 : 0,
-      };
+    if (id != null) 'id': id,
+    'uuid': uuid,
+    if (medicineId != null) 'medicine_id': medicineId,
+    'medicine_uuid': medicineUuid,
+    'time_of_day': timeOfDay,
+    'updated_at': updatedAt.toIso8601String(),
+    'deleted': deleted ? 1 : 0,
+  };
 }
