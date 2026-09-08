@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
-        android:label="ckd_care"
+        android:label="KidneyTrack"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

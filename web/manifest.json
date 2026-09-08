@@ -1,11 +1,11 @@
 {
-    "name": "ckd_care",
-    "short_name": "ckd_care",
+    "name": "KidneyTrack",
+    "short_name": "KidneyTrack",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#F7FBFD",
+    "theme_color": "#1EBFB4",
+    "description": "Personal kidney care tracking for fluids, medicines, food guidance, and dialysis routines.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

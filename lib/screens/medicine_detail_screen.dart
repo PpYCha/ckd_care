@@ -1,0 +1,200 @@
+import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:ckd_care/db/ids.dart';
+import 'package:ckd_care/models/medicine.dart';
+import 'package:ckd_care/providers/medicine_provider.dart';
+
+/// Add/edit a medicine. `medicine == null` means create.
+class MedicineDetailScreen extends StatefulWidget {
+  const MedicineDetailScreen({super.key, required this.medicine});
+  final Medicine? medicine;
+  @override
+  State<MedicineDetailScreen> createState() => _MedicineDetailScreenState();
+}
+
+class _MedicineDetailScreenState extends State<MedicineDetailScreen> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _name =
+      TextEditingController(text: widget.medicine?.name ?? '');
+  late final TextEditingController _stock = TextEditingController(
+      text: widget.medicine?.stockQty.toString() ?? '');
+  final List<String> _times = [];
+  DateTime? _endDate;
+  bool _timesError = false;
+  late bool _consumeUntilEmpty = widget.medicine?.consumeUntilEmpty ?? false;
+
+  @override
+  void initState() {
+    super.initState();
+    final m = widget.medicine;
+    if (m != null) {
+      _endDate = m.endDate;
+      // Pre-load existing times for edit.
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        final times = await context.read<MedicineProvider>().timesForMedicine(m.id!);
+        if (mounted) {
+          setState(() => _times..clear()..addAll(times));
+        }
+      });
+    }
+  }
+
+  Future<void> _pickTime() async {
+    final t = await showTimePicker(context: context, initialTime: TimeOfDay.now());
+    if (t != null) {
+      setState(() {
+        _times.add(
+            '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}');
+        _timesError = false;
+      });
+    }
+  }
+
+  Future<void> _pickEndDate() async {
+    final now = DateTime.now();
+    final firstDate = now.subtract(const Duration(days: 365));
+    // A stored end-date older than firstDate would trip showDatePicker's
+    // initialDate >= firstDate assertion, so clamp the initial value.
+    final initial = (_endDate != null && _endDate!.isAfter(firstDate)) ? _endDate! : now;
+    final d = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: firstDate,
+      lastDate: DateTime(now.year + 5),
+    );
+    if (d != null) setState(() => _endDate = d);
+  }
+
+  Future<void> _save() async {
+    final formOk = _formKey.currentState!.validate();
+    setState(() => _timesError = _times.isEmpty);
+    if (!formOk || _times.isEmpty) return;
+
+    final navigator = Navigator.of(context);
+    final isEdit = widget.medicine != null;
+    final med = Medicine(
+      id: widget.medicine?.id,
+      uuid: widget.medicine?.uuid ?? newUuid(),
+      name: _name.text.trim(),
+      // Dosage = number of doses per day = number of reminder times.
+      dosage: _times.length.toString(),
+      stockQty: int.parse(_stock.text.trim()),
+      endDate: _endDate,
+      consumeUntilEmpty: _consumeUntilEmpty,
+      createdAt: widget.medicine?.createdAt ?? DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+    await context.read<MedicineProvider>().save(med, _times..sort());
+    if (!mounted) return;
+    // Return a result; the (always-mounted) list screen shows the toast.
+    navigator.pop(isEdit ? 'updated' : 'added');
+  }
+
+  Future<void> _confirmAndDelete() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete medicine?'),
+        content: Text(
+            'Are you sure you want to delete "${widget.medicine!.name}"? '
+            'This cannot be undone.'),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, false),
+              child: const Text('Cancel')),
+          TextButton(
+              onPressed: () => Navigator.pop(ctx, true),
+              child: const Text('Delete')),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    final provider = context.read<MedicineProvider>();
+    final navigator = Navigator.of(context);
+    await provider.deactivate(widget.medicine!);
+    if (!mounted) return;
+    navigator.pop('deleted');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.medicine == null ? 'Add medicine' : 'Edit medicine'),
+        actions: [
+          if (widget.medicine != null)
+            IconButton(
+              icon: const Icon(Icons.delete),
+              onPressed: _confirmAndDelete,
+            ),
+        ],
+      ),
+      body: Form(
+        key: _formKey,
+        child: ListView(padding: const EdgeInsets.all(16), children: [
+          TextFormField(
+            controller: _name,
+            decoration: const InputDecoration(
+                labelText: 'Name *', hintText: 'Required'),
+            validator: (v) =>
+                (v == null || v.trim().isEmpty) ? 'Name is required' : null,
+          ),
+          const SizedBox(height: 14),
+          TextFormField(
+            controller: _stock,
+            keyboardType: TextInputType.number,
+            decoration: const InputDecoration(
+                labelText: 'Stock quantity *', hintText: 'Required'),
+            validator: (v) {
+              final n = int.tryParse((v ?? '').trim());
+              if (n == null) return 'Enter a whole number';
+              if (n < 0) return 'Stock cannot be negative';
+              return null;
+            },
+          ),
+          const SizedBox(height: 8),
+          SwitchListTile(
+            contentPadding: EdgeInsets.zero,
+            value: _consumeUntilEmpty,
+            onChanged: (v) => setState(() => _consumeUntilEmpty = v),
+            title: const Text('To be consumed'),
+            subtitle: Text(_consumeUntilEmpty
+                ? 'A finite course — done once the stock runs out.'
+                : 'Indefinite maintenance medicine.'),
+          ),
+          const SizedBox(height: 8),
+          Row(children: [
+            Expanded(
+              child: Text(_endDate == null
+                  ? 'End date: none (indefinite)'
+                  : 'Taken until ${Medicine.fmtDate(_endDate!)}'),
+            ),
+            if (_endDate != null)
+              IconButton(
+                  icon: const Icon(Icons.clear),
+                  onPressed: () => setState(() => _endDate = null)),
+            TextButton(onPressed: _pickEndDate, child: const Text('Set end date')),
+          ]),
+          const SizedBox(height: 8),
+          const Text('Reminder times *'),
+          Wrap(spacing: 8, children: [
+            for (final t in _times)
+              Chip(
+                label: Text(t),
+                onDeleted: () => setState(() => _times.remove(t)),
+              ),
+            ActionChip(label: const Text('+ time'), onPressed: _pickTime),
+          ]),
+          if (_timesError)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Text('Add at least one time',
+                  style: TextStyle(color: Theme.of(context).colorScheme.error)),
+            ),
+          const SizedBox(height: 24),
+          FilledButton(onPressed: _save, child: const Text('Save')),
+        ]),
+      ),
+    );
+  }
+}

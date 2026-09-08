@@ -1,4 +1,4 @@
-package com.example.ckd_care
+package com.app.kidneytrack
 
 import io.flutter.embedding.android.FlutterActivity
 

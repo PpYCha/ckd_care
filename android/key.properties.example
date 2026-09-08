@@ -1,0 +1,10 @@
+# Copy this file to `android/key.properties` and fill in your real values.
+# key.properties is git-ignored — never commit it or your keystore (.jks).
+#
+# storeFile: absolute path to your keystore. On Windows, escape backslashes
+# (\\) or use forward slashes (/).
+
+storePassword=YOUR_KEYSTORE_PASSWORD
+keyPassword=YOUR_KEY_PASSWORD
+keyAlias=upload
+storeFile=C:/Users/diasa/upload-keystore.jks
