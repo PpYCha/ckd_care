@@ -7,8 +7,12 @@ class NotificationService {
   final FlutterLocalNotificationsPlugin _plugin;
 
   static const _details = NotificationDetails(
-    android: AndroidNotificationDetails('meds', 'Medicine reminders',
-        importance: Importance.max, priority: Priority.high),
+    android: AndroidNotificationDetails(
+      'meds',
+      'Medicine reminders',
+      importance: Importance.max,
+      priority: Priority.high,
+    ),
     iOS: DarwinNotificationDetails(),
   );
 
@@ -24,7 +28,10 @@ class NotificationService {
   /// a medicine). Uses INEXACT alarms so no SCHEDULE_EXACT_ALARM permission is
   /// required — exact alarms throw PlatformException(exact_alarms_not_permitted)
   /// on Android 13+, and a few minutes' drift is fine for a daily reminder.
-  Future<void> scheduleForMedicine(int medicineId, List<MedicineTime> times) async {
+  Future<void> scheduleForMedicine(
+    int medicineId,
+    List<MedicineTime> times,
+  ) async {
     await cancelForMedicine(medicineId, times);
     for (final t in times) {
       try {
@@ -46,17 +53,30 @@ class NotificationService {
     }
   }
 
-  Future<void> cancelForMedicine(int medicineId, List<MedicineTime> times) async {
+  Future<void> cancelForMedicine(
+    int medicineId,
+    List<MedicineTime> times,
+  ) async {
     for (final t in times) {
-      await _plugin.cancel(notificationId(medicineId, t.timeOfDay));
+      try {
+        await _plugin.cancel(notificationId(medicineId, t.timeOfDay));
+      } catch (_) {
+        // Reminder scheduling is best-effort; medicine data remains usable.
+      }
     }
   }
 
   tz.TZDateTime _nextInstanceOf(String timeOfDay) {
     final parts = timeOfDay.split(':');
     final now = tz.TZDateTime.now(tz.local);
-    var scheduled = tz.TZDateTime(tz.local, now.year, now.month, now.day,
-        int.parse(parts[0]), int.parse(parts[1]));
+    var scheduled = tz.TZDateTime(
+      tz.local,
+      now.year,
+      now.month,
+      now.day,
+      int.parse(parts[0]),
+      int.parse(parts[1]),
+    );
     if (scheduled.isBefore(now)) {
       scheduled = scheduled.add(const Duration(days: 1));
     }

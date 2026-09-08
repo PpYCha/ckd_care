@@ -17,7 +17,9 @@ class MedicineProvider extends ChangeNotifier {
     medicines = await _repo.activeMedicines();
     final map = <int, List<String>>{};
     for (final m in medicines) {
-      map[m.id!] = (await _repo.timesFor(m.id!)).map((t) => t.timeOfDay).toList();
+      map[m.id!] = (await _repo.timesFor(m.id!))
+          .map((t) => t.timeOfDay)
+          .toList();
     }
     timesByMedicine = map;
     notifyListeners();
@@ -25,17 +27,17 @@ class MedicineProvider extends ChangeNotifier {
 
   Future<void> save(Medicine med, List<String> times) async {
     final id = await _repo.saveMedicine(med, times);
+    await load();
     if (await _settingsRepo.getNotificationsEnabled()) {
       await _notifications.scheduleForMedicine(id, await _repo.timesFor(id));
     }
-    await load();
   }
 
   Future<void> deactivate(Medicine med) async {
     final times = await _repo.timesFor(med.id!);
     await _repo.deactivate(med.id!);
-    await _notifications.cancelForMedicine(med.id!, times);
     await load();
+    await _notifications.cancelForMedicine(med.id!, times);
   }
 
   /// Times ('HH:mm') for one medicine — used by the edit form to pre-load.

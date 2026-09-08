@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:ckd_care/models/medicine.dart';
+import 'package:ckd_care/providers/dashboard_provider.dart';
 import 'package:ckd_care/providers/medicine_provider.dart';
 import 'package:ckd_care/screens/medicine_detail_screen.dart';
 import 'package:ckd_care/theme/app_theme.dart';
@@ -24,7 +25,8 @@ class _MedicinesScreenState extends State<MedicinesScreen> {
   /// The toast is shown here (not in the detail screen) so the messenger belongs
   /// to a widget that stays mounted after the detail route pops.
   Future<void> _openDetail(Medicine? medicine) async {
-    final messenger = ScaffoldMessenger.of(context);
+    final medicines = context.read<MedicineProvider>();
+    final dashboard = context.read<DashboardProvider>();
     final result = await Navigator.push<String>(
       context,
       MaterialPageRoute(
@@ -32,6 +34,9 @@ class _MedicinesScreenState extends State<MedicinesScreen> {
       ),
     );
     if (!mounted || result == null) return;
+    await medicines.load();
+    await dashboard.refresh();
+    if (!mounted) return;
     final msg = switch (result) {
       'added' => 'Medicine added',
       'updated' => 'Medicine updated',
@@ -39,7 +44,7 @@ class _MedicinesScreenState extends State<MedicinesScreen> {
       _ => null,
     };
     if (msg != null) {
-      messenger
+      ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
         ..showSnackBar(SnackBar(content: Text(msg)));
     }
