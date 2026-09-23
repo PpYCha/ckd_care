@@ -22,10 +22,12 @@ class _FoodScreenState extends State<FoodScreen> {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final text = Theme.of(context).textTheme;
-    final grouped =
-        groupByCategory(filterFoods(kFoods, _filter, query: _query));
+    final grouped = groupByCategory(
+      filterFoods(kFoods, _filter, query: _query),
+    );
     final band = stageBandForProfile(
-        context.watch<HealthProfileProvider>().profile);
+      context.watch<HealthProfileProvider>().profile,
+    );
 
     Widget chip(String label, FoodStatus? value) {
       final selected = _filter == value;
@@ -48,13 +50,13 @@ class _FoodScreenState extends State<FoodScreen> {
             color: cs.surfaceContainerHighest,
             borderRadius: BorderRadius.circular(14),
           ),
-          child: Row(children: [
-            Icon(Icons.info_outline, size: 20, color: cs.onSurfaceVariant),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(kFoodDisclaimer, style: text.bodyMedium),
-            ),
-          ]),
+          child: Row(
+            children: [
+              Icon(Icons.info_outline, size: 20, color: cs.onSurfaceVariant),
+              const SizedBox(width: 10),
+              Expanded(child: Text(kFoodDisclaimer, style: text.bodyMedium)),
+            ],
+          ),
         ),
         const SizedBox(height: 10),
         Material(
@@ -63,51 +65,66 @@ class _FoodScreenState extends State<FoodScreen> {
           child: InkWell(
             borderRadius: BorderRadius.circular(14),
             onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) => const FoodGuidanceScreen())),
+              context,
+              MaterialPageRoute(builder: (_) => const FoodGuidanceScreen()),
+            ),
             child: Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(14),
                 border: Border.all(color: cs.outlineVariant),
               ),
-              child: Row(children: [
-                Icon(Icons.health_and_safety_outlined,
-                    size: 20, color: cs.primary),
-                const SizedBox(width: 10),
-                Expanded(
-                    child: Text('When to consult a doctor or dietitian',
-                        style: text.titleSmall
-                            ?.copyWith(color: cs.onSurface))),
-                Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
-              ]),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.health_and_safety_outlined,
+                    size: 20,
+                    color: cs.primary,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'When to consult a doctor or dietitian',
+                      style: text.titleSmall?.copyWith(color: cs.onSurface),
+                    ),
+                  ),
+                  Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
+                ],
+              ),
             ),
           ),
         ),
         const SizedBox(height: 10),
         if (band != null)
-          Row(children: [
-            Icon(Icons.check_circle_outline, size: 16, color: cs.primary),
-            const SizedBox(width: 6),
-            Text('Guidance tailored for ${band.label}',
-                style: text.labelMedium?.copyWith(color: cs.primary)),
-          ])
+          Row(
+            children: [
+              Icon(Icons.check_circle_outline, size: 16, color: cs.primary),
+              const SizedBox(width: 6),
+              Text(
+                'Guidance tailored for ${band.label}',
+                style: text.labelMedium?.copyWith(color: cs.primary),
+              ),
+            ],
+          )
         else
           InkWell(
             onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(
-                    builder: (_) => const HealthProfileScreen())),
-            child: Row(children: [
-              Icon(Icons.tune, size: 16, color: cs.onSurfaceVariant),
-              const SizedBox(width: 6),
-              Expanded(
-                child: Text('Set your CKD stage for tailored guidance',
-                    style: text.labelMedium),
-              ),
-              Icon(Icons.chevron_right, size: 18, color: cs.onSurfaceVariant),
-            ]),
+              context,
+              MaterialPageRoute(builder: (_) => const HealthProfileScreen()),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.tune, size: 16, color: cs.onSurfaceVariant),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    'Set your CKD stage for tailored guidance',
+                    style: text.labelMedium,
+                  ),
+                ),
+                Icon(Icons.chevron_right, size: 18, color: cs.onSurfaceVariant),
+              ],
+            ),
           ),
         const SizedBox(height: 12),
         TextField(
@@ -123,19 +140,20 @@ class _FoodScreenState extends State<FoodScreen> {
                     onPressed: () => setState(() => _query = ''),
                   ),
             isDense: true,
-            border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14)),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
           ),
         ),
         const SizedBox(height: 12),
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
-          child: Row(children: [
-            chip('All', null),
-            chip('Recommended', FoodStatus.recommended),
-            chip('Limit', FoodStatus.limit),
-            chip('Avoid', FoodStatus.avoid),
-          ]),
+          child: Row(
+            children: [
+              chip('All', null),
+              chip('Good for kidney', FoodStatus.recommended),
+              chip('Limit / be careful', FoodStatus.limit),
+              chip('Bad for kidney', FoodStatus.avoid),
+            ],
+          ),
         ),
         const SizedBox(height: 4),
         for (final entry in grouped.entries) ...[
@@ -149,8 +167,11 @@ class _FoodScreenState extends State<FoodScreen> {
           Padding(
             padding: const EdgeInsets.only(top: 48),
             child: Center(
-                child: Text('No foods match this filter.',
-                    style: text.bodyMedium)),
+              child: Text(
+                'No foods match this filter.',
+                style: text.bodyMedium,
+              ),
+            ),
           ),
       ],
     );
@@ -158,10 +179,10 @@ class _FoodScreenState extends State<FoodScreen> {
 }
 
 IconData _statusIcon(FoodStatus status) => switch (status) {
-      FoodStatus.recommended => Icons.check_circle_rounded,
-      FoodStatus.limit => Icons.error_outline_rounded,
-      FoodStatus.avoid => Icons.do_not_disturb_on_outlined,
-    };
+  FoodStatus.recommended => Icons.check_circle_rounded,
+  FoodStatus.limit => Icons.error_outline_rounded,
+  FoodStatus.avoid => Icons.do_not_disturb_on_outlined,
+};
 
 class _FoodRow extends StatelessWidget {
   const _FoodRow({required this.food});
@@ -171,34 +192,50 @@ class _FoodRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final cs = Theme.of(context).colorScheme;
     final text = Theme.of(context).textTheme;
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Material(
         color: cs.surface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: cs.outlineVariant),
-      ),
-      child: ListTile(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        onTap: () => Navigator.push(context,
-            MaterialPageRoute(builder: (_) => FoodDetailScreen(food: food))),
-        leading: Container(
-          width: 46,
-          height: 46,
+        child: Container(
           decoration: BoxDecoration(
-              color: food.status.color.withValues(alpha: 0.15),
-              shape: BoxShape.circle),
-          child: Icon(_statusIcon(food.status),
-              color: food.status.color, size: 22),
-        ),
-        title: Text(food.name, style: text.titleMedium),
-        subtitle: Text(food.concerns.join(' · '), style: text.labelMedium),
-        trailing: Text(food.status.label,
-            style: TextStyle(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: cs.outlineVariant),
+          ),
+          child: ListTile(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => FoodDetailScreen(food: food)),
+            ),
+            leading: Container(
+              width: 46,
+              height: 46,
+              decoration: BoxDecoration(
+                color: food.status.color.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                _statusIcon(food.status),
+                color: food.status.color,
+                size: 22,
+              ),
+            ),
+            title: Text(food.name, style: text.titleMedium),
+            subtitle: Text(food.concerns.join(' · '), style: text.labelMedium),
+            trailing: Text(
+              food.status.label,
+              style: TextStyle(
                 fontFamily: 'Nunito',
                 fontSize: 13,
                 fontWeight: FontWeight.w800,
-                color: food.status.color)),
+                color: food.status.color,
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

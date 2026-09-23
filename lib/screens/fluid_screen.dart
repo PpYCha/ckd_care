@@ -27,30 +27,82 @@ class _FluidScreenState extends State<FluidScreen> {
   Future<void> _add(FluidType type) async {
     final messenger = ScaffoldMessenger.of(context);
     final provider = context.read<FluidProvider>();
-    final ml = await showFluidAmountDialog(context, title: 'Add ${type.name} (mL)');
+    final ml = await showFluidAmountDialog(
+      context,
+      title: 'Add ${type.name} (mL)',
+    );
     if (ml == null || !mounted) return;
     await provider.add(type, ml);
-    messenger.showSnackBar(SnackBar(
-        content: Text('${type == FluidType.intake ? 'Intake' : 'Output'} added')));
+    messenger.showSnackBar(
+      SnackBar(
+        content: Text(
+          '${type == FluidType.intake ? 'Intake' : 'Output'} added',
+        ),
+      ),
+    );
   }
 
   Future<void> _edit(FluidEntry e) async {
     final messenger = ScaffoldMessenger.of(context);
     final provider = context.read<FluidProvider>();
-    final ml = await showFluidAmountDialog(context,
-        title: 'Edit ${e.type.name} (mL)', initial: e.amountMl);
+    final ml = await showFluidAmountDialog(
+      context,
+      title: 'Edit ${e.type.name} (mL)',
+      initial: e.amountMl,
+    );
     if (ml == null || !mounted) return;
-    await provider.update(FluidEntry(
-      id: e.id,
-      uuid: e.uuid,
-      type: e.type,
-      amountMl: ml,
-      loggedAt: e.loggedAt,
-      day: e.day,
-      note: e.note,
-      updatedAt: DateTime.now(),
-    ));
+    await provider.update(
+      FluidEntry(
+        id: e.id,
+        uuid: e.uuid,
+        type: e.type,
+        amountMl: ml,
+        loggedAt: e.loggedAt,
+        day: e.day,
+        note: e.note,
+        updatedAt: DateTime.now(),
+      ),
+    );
     messenger.showSnackBar(const SnackBar(content: Text('Entry updated')));
+  }
+
+  Future<void> _pickDate() async {
+    final provider = context.read<FluidProvider>();
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: provider.selectedDate,
+      firstDate: DateTime(now.year - 2),
+      lastDate: DateTime(now.year + 2),
+    );
+    if (picked != null) await provider.selectDate(picked);
+  }
+
+  String _dateLabel(FluidProvider provider) {
+    if (provider.isToday) return 'Today';
+    final t = DateTime.now();
+    final yesterday = DateTime(
+      t.year,
+      t.month,
+      t.day,
+    ).subtract(const Duration(days: 1));
+    if (provider.selectedDate == yesterday) return 'Yesterday';
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    final d = provider.selectedDate;
+    return '${months[d.month - 1]} ${d.day}, ${d.year}';
   }
 
   ({int intake, int output}) _totals(FluidProvider p) {
@@ -73,21 +125,25 @@ class _FluidScreenState extends State<FluidScreen> {
       return Card(
         child: Padding(
           padding: const EdgeInsets.all(20),
-          child: Row(children: [
-            const Text('💧', style: TextStyle(fontSize: 28)),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('No fluid limit yet', style: text.titleMedium),
-                  const SizedBox(height: 2),
-                  Text('Set a daily limit in Settings to see your progress.',
-                      style: text.bodyMedium),
-                ],
+          child: Row(
+            children: [
+              const Text('💧', style: TextStyle(fontSize: 28)),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('No fluid limit yet', style: text.titleMedium),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Set a daily limit in Settings to see your progress.',
+                      style: text.bodyMedium,
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ]),
+            ],
+          ),
         ),
       );
     }
@@ -97,33 +153,37 @@ class _FluidScreenState extends State<FluidScreen> {
     return Card(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
-        child: Column(children: [
-          Text("TODAY'S INTAKE", style: text.titleSmall),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: 210,
-            height: 210,
-            child: CustomPaint(
-              painter: _RingPainter(
-                ratio: ratio.clamp(0.0, 1.0),
-                color: color,
-                track: cs.surfaceContainerHighest,
-              ),
-              child: Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text('💧', style: TextStyle(fontSize: 30)),
-                    const SizedBox(height: 4),
-                    Text('$intake',
-                        style: text.displaySmall?.copyWith(color: color)),
-                    Text('of $limit mL goal', style: text.bodyMedium),
-                  ],
+        child: Column(
+          children: [
+            Text("TODAY'S INTAKE", style: text.titleSmall),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: 210,
+              height: 210,
+              child: CustomPaint(
+                painter: _RingPainter(
+                  ratio: ratio.clamp(0.0, 1.0),
+                  color: color,
+                  track: cs.surfaceContainerHighest,
+                ),
+                child: Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text('💧', style: TextStyle(fontSize: 30)),
+                      const SizedBox(height: 4),
+                      Text(
+                        '$intake',
+                        style: text.displaySmall?.copyWith(color: color),
+                      ),
+                      Text('of $limit mL goal', style: text.bodyMedium),
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
-        ]),
+          ],
+        ),
       ),
     );
   }
@@ -137,18 +197,18 @@ class _FluidScreenState extends State<FluidScreen> {
         ? (
             "You've passed today's limit. Go easy on fluids and check with "
                 'your care team.',
-            AppColors.over
+            AppColors.over,
           )
         : ratio >= 0.8
-            ? (
-                'Getting close to your limit — sip slowly through the rest '
-                    'of the day.',
-                AppColors.warn
-              )
-            : (
-                'Good job! Keep drinking within your daily limit. 💧',
-                AppColors.good
-              );
+        ? (
+            'Getting close to your limit — sip slowly through the rest '
+                'of the day.',
+            AppColors.warn,
+          )
+        : (
+            'Good job! Keep drinking within your daily limit. 💧',
+            AppColors.good,
+          );
     return Container(
       margin: const EdgeInsets.only(top: 12),
       padding: const EdgeInsets.all(14),
@@ -156,15 +216,22 @@ class _FluidScreenState extends State<FluidScreen> {
         color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(16),
       ),
-      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Icon(Icons.emoji_emotions_outlined, size: 20, color: color),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(msg,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(Icons.emoji_emotions_outlined, size: 20, color: color),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              msg,
               style: text.bodyMedium?.copyWith(
-                  color: cs.onSurface, fontWeight: FontWeight.w600)),
-        ),
-      ]),
+                color: cs.onSurface,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -172,20 +239,61 @@ class _FluidScreenState extends State<FluidScreen> {
     final cs = Theme.of(context).colorScheme;
     final text = Theme.of(context).textTheme;
     Widget half(String label, int v, Color color) => Expanded(
-          child: Column(children: [
-            Text('$v mL',
-                style: text.titleLarge?.copyWith(color: color)),
-            Text(label, style: text.labelMedium),
-          ]),
-        );
+      child: Column(
+        children: [
+          Text('$v mL', style: text.titleLarge?.copyWith(color: color)),
+          Text(label, style: text.labelMedium),
+        ],
+      ),
+    );
     return Card(
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 16),
-        child: Row(children: [
-          half('Intake today', intake, AppColors.water),
-          Container(width: 1, height: 36, color: cs.outlineVariant),
-          half('Output today', output, cs.primary),
-        ]),
+        child: Row(
+          children: [
+            half('Intake today', intake, AppColors.water),
+            Container(width: 1, height: 36, color: cs.outlineVariant),
+            half('Output today', output, cs.primary),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _dateBar(FluidProvider provider) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: BoxDecoration(
+        color: cs.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: cs.outlineVariant),
+      ),
+      child: Row(
+        children: [
+          IconButton(
+            icon: Icon(Icons.chevron_left, color: cs.onSurfaceVariant),
+            onPressed: provider.previousDay,
+          ),
+          Expanded(
+            child: TextButton.icon(
+              onPressed: _pickDate,
+              icon: const Icon(Icons.calendar_today_rounded, size: 17),
+              label: Text(
+                _dateLabel(provider),
+                style: const TextStyle(
+                  fontFamily: 'Nunito',
+                  fontSize: 16,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ),
+          IconButton(
+            icon: Icon(Icons.chevron_right, color: cs.onSurfaceVariant),
+            onPressed: provider.nextDay,
+          ),
+        ],
       ),
     );
   }
@@ -194,14 +302,17 @@ class _FluidScreenState extends State<FluidScreen> {
     final cs = Theme.of(context).colorScheme;
     final isIntake = e.type == FluidType.intake;
     final color = isIntake ? AppColors.water : cs.primary;
-    final time = '${e.loggedAt.hour.toString().padLeft(2, '0')}:'
+    final time =
+        '${e.loggedAt.hour.toString().padLeft(2, '0')}:'
         '${e.loggedAt.minute.toString().padLeft(2, '0')}';
     return Dismissible(
       key: ValueKey(e.id),
       direction: DismissDirection.endToStart,
       background: Container(
         decoration: BoxDecoration(
-            color: AppColors.over, borderRadius: BorderRadius.circular(16)),
+          color: AppColors.over,
+          borderRadius: BorderRadius.circular(16),
+        ),
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 18),
         child: const Icon(Icons.delete_outline, color: Colors.white),
@@ -216,24 +327,35 @@ class _FluidScreenState extends State<FluidScreen> {
         ),
         child: ListTile(
           onTap: () => _edit(e),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           leading: Container(
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-                color: color.withValues(alpha: 0.12), shape: BoxShape.circle),
+              color: color.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+            ),
             child: Icon(
-                isIntake ? Icons.water_drop_rounded : Icons.opacity_rounded,
-                color: color,
-                size: 22),
+              isIntake ? Icons.water_drop_rounded : Icons.opacity_rounded,
+              color: color,
+              size: 22,
+            ),
           ),
-          title: Text('${e.amountMl} mL',
-              style: Theme.of(context).textTheme.titleMedium),
-          subtitle: Text('${isIntake ? 'Intake' : 'Output'}  ·  $time',
-              style: Theme.of(context).textTheme.labelMedium),
-          trailing: Icon(Icons.edit_outlined,
-              color: cs.onSurfaceVariant, size: 20),
+          title: Text(
+            '${e.amountMl} mL',
+            style: Theme.of(context).textTheme.titleMedium,
+          ),
+          subtitle: Text(
+            '${isIntake ? 'Intake' : 'Output'}  ·  $time',
+            style: Theme.of(context).textTheme.labelMedium,
+          ),
+          trailing: Icon(
+            Icons.edit_outlined,
+            color: cs.onSurfaceVariant,
+            size: 20,
+          ),
         ),
       ),
     );
@@ -248,6 +370,7 @@ class _FluidScreenState extends State<FluidScreen> {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
         children: [
+          _dateBar(p),
           _gaugeCard(t.intake, limit),
           _encouragement(t.intake, limit),
           const SizedBox(height: 12),
@@ -258,37 +381,56 @@ class _FluidScreenState extends State<FluidScreen> {
             Padding(
               padding: const EdgeInsets.only(top: 32),
               child: Center(
-                child: Column(children: [
-                  Icon(Icons.local_drink_outlined,
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.local_drink_outlined,
                       size: 44,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant),
-                  const SizedBox(height: 10),
-                  Text('No fluid logged today',
-                      style: Theme.of(context).textTheme.titleMedium),
-                  const SizedBox(height: 2),
-                  Text('Use the buttons below to add intake or output.',
-                      style: Theme.of(context).textTheme.bodyMedium),
-                ]),
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      'No fluid logged today',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Use the buttons below to add intake or output.',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ],
+                ),
               ),
             ),
         ],
       ),
       floatingActionButton: Row(
         mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          FloatingActionButton.extended(
-              heroTag: 'in',
-              backgroundColor: AppColors.water,
-              icon: const Icon(Icons.add),
-              onPressed: () => _add(FluidType.intake),
-              label: const Text('Intake')),
-          const SizedBox(width: 12),
-          FloatingActionButton.extended(
-              heroTag: 'out',
-              icon: const Icon(Icons.add),
-              onPressed: () => _add(FluidType.output),
-              label: const Text('Output')),
-        ],
+        children: p.isToday
+            ? [
+                FloatingActionButton.extended(
+                  heroTag: 'in',
+                  backgroundColor: AppColors.water,
+                  icon: const Icon(Icons.add),
+                  onPressed: () => _add(FluidType.intake),
+                  label: const Text('Intake'),
+                ),
+                const SizedBox(width: 12),
+                FloatingActionButton.extended(
+                  heroTag: 'out',
+                  icon: const Icon(Icons.add),
+                  onPressed: () => _add(FluidType.output),
+                  label: const Text('Output'),
+                ),
+              ]
+            : [
+                FloatingActionButton.extended(
+                  heroTag: 'today',
+                  icon: const Icon(Icons.today_rounded),
+                  onPressed: () => p.selectDate(DateTime.now()),
+                  label: const Text('Today'),
+                ),
+              ],
       ),
     );
   }
@@ -308,7 +450,11 @@ class _RingPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     const stroke = 20.0;
     final rect = Rect.fromLTWH(
-        stroke / 2, stroke / 2, size.width - stroke, size.height - stroke);
+      stroke / 2,
+      stroke / 2,
+      size.width - stroke,
+      size.height - stroke,
+    );
     final base = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = stroke
